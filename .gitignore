@@ -18,7 +18,9 @@
 [Rr]elease/
 [Rr]eleases/
 x64/
+x64d/
 x86/
+x86d/
 bld/
 [Bb]in/
 [Oo]bj/
