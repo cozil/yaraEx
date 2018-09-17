@@ -293,9 +293,6 @@
     <ClInclude Include="Handle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="yaraEx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="misc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -303,6 +300,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Memory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="command_yaraEx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="command_struct.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -378,13 +381,16 @@
     <ClCompile Include="strutils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="yaraEx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="misc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FileHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="command_yaraEx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="command_struct.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

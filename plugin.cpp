@@ -1,7 +1,7 @@
 #include "plugin.h"
 #include "strutils.h"
 #include "Handle.h"
-#include "yaraEx.h"
+#include "command_yaraEx.h"
 #include "misc.h"
 
 static int print_exception(EXCEPTION_POINTERS * _excpt)
@@ -46,15 +46,6 @@ static int print_exception(EXCEPTION_POINTERS * _excpt)
 
 	return 1;
 }
-
-
-//static bool _cbYaraEx(int argc, char* argv[])
-//{
-//	yaraEx yarInst;
-//	return yarInst.cmd_yaraEx(argc, argv);
-//}
-
-
 
 #define TRY_CALL(func) \
 	bool success = false; \

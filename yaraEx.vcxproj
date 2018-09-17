@@ -111,7 +111,7 @@
       <SubSystem>Windows</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y /B $(SolutionDir)bin\x32\$(ProjectName)$(TargetExt) "D:\Program Files\TOOLS\动态调试\x64dbg\x32\plugins\"</Command>
+      <Command>copy /Y /B $(SolutionDir)bin\x86\$(ProjectName)$(TargetExt) "D:\Program Files\TOOLS\动态调试\x64dbg\x32\plugins\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -176,14 +176,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="command_struct.cpp" />
+    <ClCompile Include="command_yaraEx.cpp" />
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="misc.cpp" />
     <ClCompile Include="plugin.cpp" />
     <ClCompile Include="pluginmain.cpp" />
     <ClCompile Include="strutils.cpp" />
-    <ClCompile Include="yaraEx.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="command_struct.h" />
+    <ClInclude Include="command_yaraEx.h" />
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="Handle.h" />
     <ClInclude Include="Memory.h" />
@@ -269,7 +272,6 @@
     <ClInclude Include="pluginsdk\_scriptapi_stack.h" />
     <ClInclude Include="pluginsdk\_scriptapi_symbol.h" />
     <ClInclude Include="strutils.h" />
-    <ClInclude Include="yaraEx.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="pluginsdk\capstone\capstone_x64.lib">

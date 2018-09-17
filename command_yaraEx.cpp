@@ -1,4 +1,4 @@
-#include "yaraEx.h"
+#include "command_yaraEx.h"
 #include "strutils.h"
 #include "misc.h"
 #include "FileHelper.h"
@@ -475,11 +475,10 @@ void yaraEx::execScript()
 			logprintf(LOG_ERROR, "Failed to write script file \"%s\".\n", scriptfile.c_str());
 		}
 		else
-		{
-			DbgScriptUnload();
+		{ 
 			DbgScriptLoad(scriptfile.c_str());
 			remove(scriptfile.c_str());
-			DbgScriptRun(0);			
+			DbgScriptRun(0);
 		}
 	}
 
