@@ -1,8 +1,12 @@
 #include "plugin.h"
 #include "strutils.h"
 #include "Handle.h"
-#include "command_yaraEx.h"
 #include "misc.h"
+#include "command_yaraEx.h"
+#include "command_struct.h"
+
+static CStructHelper _structHelper;
+static yaraEx _yaraInst;
 
 static int print_exception(EXCEPTION_POINTERS * _excpt)
 {
@@ -15,7 +19,6 @@ static int print_exception(EXCEPTION_POINTERS * _excpt)
 	MEMORY_BASIC_INFORMATION mbi;
 	if (VirtualQuery(_excpt->ExceptionRecord->ExceptionAddress, &mbi, sizeof(mbi)))
 	{
-		//logputs(string_formatA("module handle: %p\n", mbi.AllocationBase).c_str());
 		char ModName[MAX_PATH];
 		GetModuleFileNameA((HMODULE)mbi.AllocationBase, ModName, MAX_PATH);
 		logputs(string_formatA("An exception occurred at address %p resided in module %p.\n",
@@ -54,32 +57,83 @@ static int print_exception(EXCEPTION_POINTERS * _excpt)
 	}__except(print_exception(GetExceptionInformation())) {} \
 	return success
 
-static yaraEx _yaraInst;
-
-static bool cb_cmd_yaraEx(int argc, char* argv[])
-{
-	TRY_CALL(_yaraInst.cmd_yaraEx);
-}
-
-static bool cb_cmd_yarafind(int argc, char* argv[])
-{
-	TRY_CALL(_yaraInst.cmd_yarafind);
-}
-
-static bool cb_cmd_yarafindall(int argc, char* argv[])
-{
-	TRY_CALL(_yaraInst.cmd_yarafindall);
-}
 
 //Initialize your plugin data here.
+
 bool pluginInit(PLUG_INITSTRUCT* initStruct)
 {
-	_plugin_registercommand(pluginHandle, CMD_NAME_YARAEX, cb_cmd_yaraEx, true);
-	_plugin_registercommand(pluginHandle, CMD_NAME_YARAFIND, cb_cmd_yarafind, true);
-	_plugin_registercommand(pluginHandle, CMD_NAME_YARAFINDALL, cb_cmd_yarafindall, true);
+	_plugin_registercommand(pluginHandle, CMD_NAME_YARAEX, [](int argc, char* argv[]) -> bool
+	{		
+		TRY_CALL(_yaraInst.cmd_yaraEx);
+	}, true);
 
-	//_plugin_unregistercommand(pluginHandle, "strget");
-	//_plugin_unregistercommand(pluginHandle, "getstr");
+	_plugin_registercommand(pluginHandle, CMD_NAME_YARAFIND, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_yaraInst.cmd_yarafind);
+	}, true);
+
+	_plugin_registercommand(pluginHandle, CMD_NAME_YARAFINDALL, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_yaraInst.cmd_yarafindall);
+	}, true);
+
+	_plugin_registercommand(pluginHandle, CMD_NAME_ADD_STRUCT, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_structHelper.doCommand);
+	}, false);
+
+	_plugin_registercommand(pluginHandle, CMD_NAME_REMOVE_STRUCT, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_structHelper.doCommand);
+	}, false);
+
+
+	_plugin_registercommand(pluginHandle, CMD_NAME_ADD_ANCESTOR, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_structHelper.doCommand);
+	}, false);
+
+
+	_plugin_registercommand(pluginHandle, CMD_NAME_INSERT_ANCESTOR, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_structHelper.doCommand);
+	}, false);
+
+	_plugin_registercommand(pluginHandle, CMD_NAME_REMOVE_ANCESTOR, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_structHelper.doCommand);
+	}, false);
+
+	_plugin_registercommand(pluginHandle, CMD_NAME_ADD_MEMBER, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_structHelper.doCommand);
+	}, false);
+
+	_plugin_registercommand(pluginHandle, CMD_NAME_INSERT_MEMBER, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_structHelper.doCommand);
+	}, false);
+
+	_plugin_registercommand(pluginHandle, CMD_NAME_REMOVE_MEMBER, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_structHelper.doCommand);
+	}, false);
+
+	_plugin_registercommand(pluginHandle, CMD_NAME_SET_MEMBER_COMMENT, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_structHelper.doCommand);
+	}, false);
+
+	_plugin_registercommand(pluginHandle, CMD_NAME_PRINT_STRUCT, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_structHelper.doCommand);
+	}, false);
+
+	_plugin_registercommand(pluginHandle, CMD_NAME_REMOVE_ALL, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_structHelper.doCommand);
+	}, false);
+
     return true; //Return false to cancel loading the plugin.
 }
 

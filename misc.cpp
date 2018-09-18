@@ -2,14 +2,14 @@
 #include "pluginmain.h"
 #include "strutils.h"
 
-//void logprintf(const char* format, ...)
-//{
-//	va_list ap;
-//	va_start(ap, format);
-//	std::string msg = "[" PLUGIN_NAME "] " + string_vformatA(format, ap);
-//	va_end(ap);
-//	_plugin_logputs(msg.c_str());
-//}
+void logprintf(const char * cmd_name, const char * format, ...)
+{
+	va_list ap;
+	va_start(ap, format);
+	std::string msg = string_formatA("[" PLUGIN_NAME "] [%s] ", cmd_name) + string_vformatA(format, ap);
+	va_end(ap);
+	_plugin_logputs(msg.c_str());
+}
 
 void logputs(const char * text)
 {
