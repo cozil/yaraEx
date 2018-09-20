@@ -2,19 +2,32 @@
 #include "pluginmain.h"
 #include "strutils.h"
 
-void logprintf(const char * cmd_name, const char * format, ...)
+static LL _log_level = LL::Message;
+
+void set_log_level(LL level)
 {
-	va_list ap;
-	va_start(ap, format);
-	std::string msg = string_formatA("[" PLUGIN_NAME "] [%s] ", cmd_name) + string_vformatA(format, ap);
-	va_end(ap);
-	_plugin_logputs(msg.c_str());
+	_log_level = level;
 }
 
-void logputs(const char * text)
+void logprintf(LL level, const char * format, ...)
 {
-	std::string msg = "[" PLUGIN_NAME "] " + std::string(text);
-	_plugin_logputs(msg.c_str());
+	if (level <= _log_level)
+	{
+		va_list ap;
+		va_start(ap, format);
+		std::string msg = string_formatA("[" PLUGIN_NAME "] %s\n", string_vformatA(format, ap).c_str());
+		va_end(ap);
+		_plugin_logputs(msg.c_str());
+	}
+}
+
+void logputs(LL level, const char * text)
+{
+	if (level <= _log_level)
+	{
+		std::string msg = string_formatA("[" PLUGIN_NAME "] %s\n", text);
+		_plugin_logputs(msg.c_str());
+	}
 }
 
 void print_usages(const char * cmdname)

@@ -43,26 +43,26 @@ yaraEx::~yaraEx()
 		Script::Debug::Run();
 }
 
-void yaraEx::logprintf(int level, const char* format, ...)
-{
-	if (!m_debug && m_logLevel < level)
-		return;
-
-	va_list ap;
-	va_start(ap, format);
-	std::string msg = string_formatA("[%s] ",m_cmdname.c_str()) + string_vformatA(format, ap);
-	va_end(ap);
-	::logputs(msg.c_str());
-}
-
-void yaraEx::logputs(int level, const char * text)
-{
-	if (!m_debug && m_logLevel < level)
-		return;
-
-	std::string msg = string_formatA("[%s] ", m_cmdname.c_str()) + std::string(text);
-	::logputs(msg.c_str());
-}
+//void yaraEx::logprintf(int level, const char* format, ...)
+//{
+//	if (!m_debug && m_logLevel < level)
+//		return;
+//
+//	va_list ap;
+//	va_start(ap, format);
+//	std::string msg = string_formatA("[%s] ",m_cmdname.c_str()) + string_vformatA(format, ap);
+//	va_end(ap);
+//	::logputs(msg.c_str());
+//}
+//
+//void yaraEx::logputs(int level, const char * text)
+//{
+//	if (!m_debug && m_logLevel < level)
+//		return;
+//
+//	std::string msg = string_formatA("[%s] ", m_cmdname.c_str()) + std::string(text);
+//	::logputs(msg.c_str());
+//}
 
 void yaraEx::cleanup()
 {
@@ -115,7 +115,7 @@ bool yaraEx::initModule(const char * mod, const char * size)
 	{
 		if (!Script::Misc::ParseExpression(mod, &m_base))
 		{
-			logprintf(LOG_ERROR, "Invalid expression \"%s\"!\n", mod);
+			logprintf(LL::Error, "Invalid expression \"%s\"!", mod);
 			return false;
 		}
 
@@ -135,13 +135,13 @@ bool yaraEx::initModule(const char * mod, const char * size)
 		char modPath[MAX_PATH] = "";
 		if (!Script::Module::PathFromAddr(m_base, modPath))
 		{
-			logprintf(LOG_ERROR, "Failed to get module path for %p!\n", m_base);
+			logprintf(LL::Error, "Failed to get module path for %p!", m_base);
 			return false;
 		}
 
 		if (!FileHelper::ReadAllData(modPath, rawFileData))
 		{
-			logprintf(LOG_ERROR, "Failed to read file \"%s\"!\n", modPath);
+			logprintf(LL::Error, "Failed to read file \"%s\"!", modPath);
 			return false;
 		}
 		modsize = rawFileData.size();
@@ -173,14 +173,14 @@ bool yaraEx::initPattern(const char * pattern)
 	{
 		char text[1024];
 		pcre2_get_error_message(error_code, reinterpret_cast<PCRE2_UCHAR*>(text), sizeof(text));
-		logprintf(LOG_ERROR, "Failed to compile pcre pattern: %s\n", text);
+		logprintf(LL::Error, "Failed to compile pcre pattern: %s", text);
 		return false;
 	}
 
 	m_match = pcre2_match_data_create_from_pattern(m_re, NULL);
 	if (!m_match)
 	{
-		logputs(LOG_ERROR, "Failed to create pcre match data\n");
+		logputs(LL::Error, "Failed to create pcre match data");
 		return false;
 	}
 
@@ -191,7 +191,7 @@ bool yaraEx::initYara(const std::string& content, bool isfile)
 {
 	if (yr_compiler_create(&m_yrCompiler) != ERROR_SUCCESS)
 	{
-		logputs(LOG_ERROR, "yr_compiler_create failed!");
+		logputs(LL::Error, "yr_compiler_create failed!");
 		return false;
 	}
 
@@ -200,12 +200,6 @@ bool yaraEx::initYara(const std::string& content, bool isfile)
 	std::string rulesContent;
 	if (isfile)
 	{		
-		//if (!FileHelper::ReadAllText(content, rulesContent))
-		//{
-		//	logprintf(LOG_ERROR, "Failed to read the rules file \"%s\"\n", content.c_str());
-		//	return false;
-		//}
-
 		rulesContent = string_formatA("include \"%s\"", content.c_str());
 
 		//Fetch path
@@ -225,14 +219,13 @@ bool yaraEx::initYara(const std::string& content, bool isfile)
 
 	if (yr_compiler_add_string(m_yrCompiler, rulesContent.c_str(), nullptr) != 0)
 	{
-		logputs(LOG_ERROR, "Errors in the rules text!");
+		logputs(LL::Error, "Errors in the rules text!");
 		return false;
 	}
-	//}
 
 	if (yr_compiler_get_rules(m_yrCompiler, &m_yrRules) != ERROR_SUCCESS)
 	{
-		logputs(LOG_ERROR, "Error while getting the rules!");
+		logputs(LL::Error, "Error while getting the rules!");
 		return false;
 	}
 
@@ -324,7 +317,7 @@ bool yaraEx::initRules(bool scanMeta)
 
 					if (!FileHelper::ReadAllLines(file, lines))
 					{
-						logprintf(LOG_ERROR, "Rule \"%s\": Failed to read the script file \"%s\"\n",
+						logprintf(LL::Error, "Rule \"%s\": Failed to read the script file \"%s\"",
 							yrRule->identifier, yrMeta->string);
 						return false;
 					}
@@ -360,14 +353,14 @@ bool yaraEx::doScan()
 	switch (err)
 	{
 	case ERROR_SUCCESS:
-		logprintf(LOG_INFO, "%u scan results in %ums...\n", m_matchCount, GetTickCount() - DWORD(ticks));
+		logprintf(LL::Message, "%u scan results in %ums...", m_matchCount, GetTickCount() - DWORD(ticks));
 		bSuccess = true;
 		break;
 	case ERROR_TOO_MANY_MATCHES:
-		logputs(LOG_ERROR, "Too many matches!");
+		logputs(LL::Error, "Too many matches!");
 		break;
 	default:
-		logputs(LOG_ERROR, "Error while scanning memory!");
+		logputs(LL::Error, "Error while scanning memory!");
 		break;
 	}
 
@@ -411,16 +404,12 @@ void yaraEx::execScript()
 				if (slot >= 1) slot -= 1;
 				if (slot >= (int)matches.size()) slot = -1;
 
-				//logputs(LOG_WARNING, string_formatA("%s,[%d => %d], matched count:%d\n",
-				//	var.fulltext.c_str(), var.slot, slot, matches.size()).c_str());
-		
 				if (var.prefix == "#")
 				{		
 					value = matches.size();
 				}
 				else if (var.prefix == "@")
 				{
-					//logprintf(LOG_WARNING, "slot=%d, match count:%d\n", slot, matches.size());
 					if (slot >= 0)
 						value = m_base + matches[slot].offset;
 				}
@@ -434,13 +423,10 @@ void yaraEx::execScript()
 					replace = false;
 				}
 
-				//logprintf(LOG_WARNING, "%s = %x\n", var.fulltext.c_str(), value);
 				if (replace)
 				{
 					cmdtext.replace(pos, var.fulltext.length(), string_formatA("0x%x", value));
 				}
-
-				//logprintf(LOG_WARNING, "cmdtext = %s\n", cmdtext.c_str());
 			}
 
 			script.push_back(std::move(cmdtext));
@@ -472,7 +458,7 @@ void yaraEx::execScript()
 
 		if (!FileHelper::WriteAllText(scriptfile, content))
 		{
-			logprintf(LOG_ERROR, "Failed to write script file \"%s\".\n", scriptfile.c_str());
+			logprintf(LL::Error, "Failed to write script file \"%s\".", scriptfile.c_str());
 		}
 		else
 		{ 
@@ -491,18 +477,18 @@ void yaraEx::compilerCallback(int error_level, const char* file_name, int line_n
 	std::string text;
 	
 	if (file_name)
-		text = string_formatA("File: \"%s\", Line: %d, Message: \"%s\"\n", file_name, line_number, message);
+		text = string_formatA("File: \"%s\", Line: %d, Message: \"%s\"", file_name, line_number, message);
 	else
-		text = string_formatA("Line: %d, Message: \"%s\"\n", line_number, message);
+		text = string_formatA("Line: %d, Message: \"%s\"", line_number, message);
 
 	switch (error_level)
 	{
 	case YARA_ERROR_LEVEL_ERROR:
-		lpThis->logprintf(LOG_ERROR, "[ERROR] %s", text.c_str());
+		logputs(LL::Error, text.c_str());
 		break;
 
 	case YARA_ERROR_LEVEL_WARNING:
-		lpThis->logprintf(LOG_WARNING, "[WARNING] %s", text.c_str());
+		logputs(LL::Warning, text.c_str());
 		break;
 	}	
 }
@@ -513,7 +499,7 @@ duint yaraEx::saveMatches(YR_RULE * yrRule)
 	auto itRule = m_results.find(std::string(yrRule->identifier));
 	if (itRule == m_results.end())
 	{
-		logprintf(LOG_ERROR, "Rule \"%s\" doesn't initialized!", yrRule->identifier);
+		logprintf(LL::Error, "Rule \"%s\" doesn't initialized!", yrRule->identifier);
 		return 0;
 	}
 
@@ -560,26 +546,26 @@ int yaraEx::scanCallback(int message, void* message_data, void* user_data)
 	case CALLBACK_MSG_RULE_MATCHING:
 	{
 		duint matchCount = lpThis->saveMatches(yrRule);
-		lpThis->logprintf(LOG_DEBUG, "Rule \"%s\" found %d matches!", yrRule->identifier, matchCount);
+		logprintf(LL::Debug, "Rule \"%s\" found %d matches!", yrRule->identifier, matchCount);
 	}
 	break;
 
 	case CALLBACK_MSG_RULE_NOT_MATCHING:
 	{
-		lpThis->logprintf(LOG_INFO, "Rule \"%s\" didn't match!\n", yrRule->identifier);
+		logprintf(LL::Warning, "Rule \"%s\" didn't match!", yrRule->identifier);
 	}
 	break;
 
 	//case CALLBACK_MSG_SCAN_FINISHED:
 	//{
-	//	lpThis->logdebugmsg("Scan finished!\n");
+	//	lpThis->logdebugmsg("Scan finished!");
 	//}
 	//break;
 
 	//case CALLBACK_MSG_IMPORT_MODULE:
 	//{
 	//	YR_MODULE_IMPORT* yrModuleImport = (YR_MODULE_IMPORT*)message_data;
-	//	lpThis->logdebugmsg(string_formatA("Imported module \"%s\"!\n", yrModuleImport->module_name));
+	//	lpThis->logdebugmsg(string_formatA("Imported module \"%s\"!", yrModuleImport->module_name));
 	//}
 	break;
 	}
@@ -595,7 +581,7 @@ bool yaraEx::cmd_yaraEx(int argc, char *argv[])
 
 	if (argc < 2)
 	{
-		logputs(LOG_ERROR, "Error: Not enough arguments!\n");
+		logputs(LL::Error, "Error: Not enough arguments!");
 		print_usages(m_cmdname.c_str());
 		return false;
 	}
@@ -624,7 +610,7 @@ bool yaraEx::_yarafind(int argc, char * argv[])
 	cleanup();
 	if (argc < 3)
 	{
-		logputs(LOG_ERROR, "Error: Not enough arguments!\n");
+		logputs(LL::Error, "Error: Not enough arguments!");
 		print_usages(m_cmdname.c_str());
 		return false;
 	}
@@ -724,7 +710,6 @@ bool yaraEx::cmd_yarafindall(int argc, char *argv[])
 		for (auto& pairRule : m_results)
 		{
 			const YaraRule& rule = pairRule.second;
-			//logprintf(LOG_DEBUG, "Checking string:%s\n", pairRule.first.c_str());
 			if (!rule.matched)
 				continue;
 

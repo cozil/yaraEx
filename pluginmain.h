@@ -82,6 +82,8 @@ extern int hMenuStack;
 #define PLUGIN_NAME "yaraEx"
 #define PLUGIN_VERSION 1
 
+#define CMD_NAME_YARAEX_LL			"yaraEx.ll"
+
 #define CMD_NAME_YARAEX				"yaraEx"
 #define CMD_NAME_YARAFIND			"yarafind"
 #define CMD_NAME_YARAFINDALL		"yarafindall"
@@ -92,7 +94,6 @@ extern int hMenuStack;
 #define CMD_NAME_INSERT_ANCESTOR	"struct.insertAncestor"
 #define CMD_NAME_REMOVE_ANCESTOR	"struct.removeAncestor"
 #define CMD_NAME_ADD_MEMBER			"struct.addMember"
-//#define CMD_NAME_INSERT_MEMBER		"struct.insertMember"
 #define CMD_NAME_REMOVE_MEMBER		"struct.removeMember"
 #define CMD_NAME_SET_MEMBER_COMMENT	"struct.setMemberComment"
 #define CMD_NAME_PRINT_STRUCT		"struct.print"

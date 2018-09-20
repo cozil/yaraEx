@@ -1,5 +1,6 @@
 #pragma once
 #include "pluginmain.h"
+#include "strutils.h"
 
 struct CmdArgumentSet
 {
@@ -92,8 +93,21 @@ public:
 		std::string comment;
 		int type_size;
 		int array_size;	//0 indicates no array
-		//duint offset;
+		int offset;
 		bool ispadding;
+
+		int get_size() const { return array_size ? array_size * type_size : type_size; }
+		int get_next_offset() const { return offset + get_size(); }
+
+		void set_padding(int _offset, int _size)
+		{
+			offset = _offset;
+			type_size = 1;
+			type = "char";
+			array_size = _size;
+			ispadding = true;
+			name = string_formatA("padding_%04x", offset);
+		}
 
 		_Member& operator=(const _Member& member)
 		{
@@ -101,7 +115,7 @@ public:
 			name = member.name;
 			type_size = member.type_size;
 			array_size = member.array_size;
-			//offset = member.offset;
+			offset = member.offset;
 			ispadding = member.ispadding;
 			return *this;
 		}
@@ -132,12 +146,14 @@ public:
 		std::string name;
 		std::vector<_Ancestor> ancestors;
 		std::vector<_Member> members;
+		int size;
 
 		_Struct& operator=(const _Struct& struc)
 		{
 			name = struc.name;
 			ancestors = struc.ancestors;
 			members = struc.members;
+			size = struc.size;
 			return *this;
 		}
 	};
@@ -150,6 +166,7 @@ public:
 
 
 	bool doCommand(int argc, char ** argv);
+	
 
 protected:
 	DECLARE_STRUCT_CMD_MAP();
@@ -171,10 +188,13 @@ protected:
 	bool removeAll(CmdArgumentSet& args);
 
 	int typeSize(const std::string& type) const;
-	int structSize(const std::string& structName) const;
-	int _structSize(const std::string& structName, std::vector<std::string>& stack) const;
+	//bool structSize(const std::string& structName, int * psize) const;
+	//int _structSize(const std::string& structName, std::vector<std::string>& stack) const;
+	bool _beforeExpandStruct(const std::string& changedStruct, int expand_size);
+	bool _removeAncestor(_Struct& struc, std::vector<_Ancestor>::const_iterator itrAncestor);
+	bool _removeMember(_Struct& struc, size_t& memberId);
 private:
-	std::vector<_Struct> m_structs;
+	std::unordered_map<std::string, _Struct> m_structs;
 	std::unordered_map<std::string, _Type> m_types;
 	std::unordered_map<Primitive, int> m_primitivesizes;
 };

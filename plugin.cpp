@@ -12,7 +12,7 @@ static int print_exception(EXCEPTION_POINTERS * _excpt)
 {
 	if (!_excpt)
 	{
-		logputs("Empty exception pointer!\n");
+		logputs(LL::Error, "Empty exception pointer!\n");
 		return 1;
 	}
 
@@ -21,30 +21,30 @@ static int print_exception(EXCEPTION_POINTERS * _excpt)
 	{
 		char ModName[MAX_PATH];
 		GetModuleFileNameA((HMODULE)mbi.AllocationBase, ModName, MAX_PATH);
-		logputs(string_formatA("An exception occurred at address %p resided in module %p.\n",
-			_excpt->ExceptionRecord->ExceptionAddress, mbi.AllocationBase).c_str());
+		logprintf(LL::Error, "An exception occurred at address %p resided in module %p.",
+			_excpt->ExceptionRecord->ExceptionAddress, mbi.AllocationBase);
 			
-		logputs(string_formatA("Module file is %s.\n", ascii_to_utf8(ModName).c_str()).c_str());
+		logprintf(LL::Error, "Module file is %s.", ascii_to_utf8(ModName).c_str());
 	}
 	else
 	{
-		logputs(string_formatA("An exception occurred at address %p.\n",
-			_excpt->ExceptionRecord->ExceptionAddress).c_str());
+		logprintf(LL::Error, "An exception occurred at address %p.",
+			_excpt->ExceptionRecord->ExceptionAddress);
 	}
 	
 	if (_excpt->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION)
 	{
 		if (_excpt->ExceptionRecord->ExceptionInformation[0])
-			logputs(string_formatA("Access violation on reading from address %p.\n",
-				_excpt->ExceptionRecord->ExceptionInformation[1]).c_str());
+			logprintf(LL::Error, "Access violation on reading from address %p.",
+			_excpt->ExceptionRecord->ExceptionInformation[1]);
 		else
-			logputs(string_formatA("Access violation on writing into address %p.\n",
-				_excpt->ExceptionRecord->ExceptionInformation[1]).c_str());
+			logprintf(LL::Error, "Access violation on writing into address %p.",
+				_excpt->ExceptionRecord->ExceptionInformation[1]);
 	}
 	else
 	{
-		logputs(string_formatA("Exception code is %p.\n",
-			_excpt->ExceptionRecord->ExceptionCode).c_str());
+		logprintf(LL::Error, "Exception code is %p.",
+			_excpt->ExceptionRecord->ExceptionCode);
 	}
 
 	return 1;
@@ -62,6 +62,24 @@ static int print_exception(EXCEPTION_POINTERS * _excpt)
 
 bool pluginInit(PLUG_INITSTRUCT* initStruct)
 {
+	_plugin_registercommand(pluginHandle, CMD_NAME_YARAEX_LL, [](int argc, char* argv[]) -> bool
+	{
+		if (argc <= 1)
+		{
+			logputs(LL::Error, "Not enough arguments!");
+			logputs(LL::Error,
+				"Usage:\n" CMD_NAME_YARAEX_LL "<arg1>\n"
+				"<arg1> Log message output level(0 - Error, 1 - Warning, 2 - Normal message, 3 - Debug message");
+			return false;
+		}
+
+		int l = atoi(argv[1]);
+		if (l < 0) l = 0;
+		if (l > (int)LL::Max) l = (int)LL::Max;
+		set_log_level((LL)l);
+		return true;
+	}, false);
+
 	_plugin_registercommand(pluginHandle, CMD_NAME_YARAEX, [](int argc, char* argv[]) -> bool
 	{		
 		TRY_CALL(_yaraInst.cmd_yaraEx);
@@ -109,10 +127,10 @@ bool pluginInit(PLUG_INITSTRUCT* initStruct)
 		TRY_CALL(_structHelper.doCommand);
 	}, false);
 
-	_plugin_registercommand(pluginHandle, CMD_NAME_INSERT_MEMBER, [](int argc, char* argv[]) -> bool
-	{
-		TRY_CALL(_structHelper.doCommand);
-	}, false);
+	//_plugin_registercommand(pluginHandle, CMD_NAME_INSERT_MEMBER, [](int argc, char* argv[]) -> bool
+	//{
+	//	TRY_CALL(_structHelper.doCommand);
+	//}, false);
 
 	_plugin_registercommand(pluginHandle, CMD_NAME_REMOVE_MEMBER, [](int argc, char* argv[]) -> bool
 	{

@@ -79,8 +79,8 @@ public:
 	yaraEx();
 	~yaraEx();
 
-	void logprintf(int level, const char* format, ...);
-	void logputs(int level, const char * text);
+	//void logprintf(int level, const char* format, ...);
+	//void logputs(int level, const char * text);
 	//void logdebugmsg(const std::string& text);
 
 	//yaraEx
