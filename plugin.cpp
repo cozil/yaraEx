@@ -67,16 +67,20 @@ bool pluginInit(PLUG_INITSTRUCT* initStruct)
 		if (argc <= 1)
 		{
 			logputs(LL::Error, "Not enough arguments!");
-			logputs(LL::Error,
-				"Usage:\n" CMD_NAME_YARAEX_LL "<arg1>\n"
-				"<arg1> Log message output level(0 - Error, 1 - Warning, 2 - Normal message, 3 - Debug message");
+			print_usages(CMD_NAME_YARAEX_LL);
 			return false;
 		}
+
+		const char * lltexts[] =
+		{ "Error", "Warning", "Normal message", "Debug message" };
 
 		int l = atoi(argv[1]);
 		if (l < 0) l = 0;
 		if (l > (int)LL::Max) l = (int)LL::Max;
 		set_log_level((LL)l);
+		if (l < _countof(lltexts))
+			logprintf(LL::Error, "Log level has been changed to %s.", lltexts[l]);
+
 		return true;
 	}, false);
 
@@ -148,6 +152,11 @@ bool pluginInit(PLUG_INITSTRUCT* initStruct)
 	}, false);
 
 	_plugin_registercommand(pluginHandle, CMD_NAME_REMOVE_ALL, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_structHelper.doCommand);
+	}, false);
+
+	_plugin_registercommand(pluginHandle, CMD_NAME_SIZEOFTYPE, [](int argc, char* argv[]) -> bool
 	{
 		TRY_CALL(_structHelper.doCommand);
 	}, false);

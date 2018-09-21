@@ -13,6 +13,11 @@ struct CmdArgumentSet
 	std::string comment;
 	int arraySize = 0;
 	int memberOffset = -1;
+
+	//used by struct.print
+	int offsetLength = -1;
+	int typeLength = 0;
+	int memberNameLength = 0;
 };
 
 class CStructHelper;
@@ -106,7 +111,7 @@ public:
 			type = "char";
 			array_size = _size;
 			ispadding = true;
-			name = string_formatA("padding_%04x", offset);
+			name = string_formatA("__pad_%04x", offset);
 		}
 
 		_Member& operator=(const _Member& member)
@@ -171,25 +176,20 @@ public:
 protected:
 	DECLARE_STRUCT_CMD_MAP();
 
-	bool addStruct(CmdArgumentSet& args); // const char * structName);
-	bool removeStruct(CmdArgumentSet& args); //const char * structName);
+	bool addStruct(CmdArgumentSet& args);
+	bool removeStruct(CmdArgumentSet& args);
+	bool addAncestor(CmdArgumentSet& args);
+	bool insertAncestor(CmdArgumentSet& args);
+	bool removeAncestor(CmdArgumentSet& args);
+	bool addMember(CmdArgumentSet& args);
+	bool removeMember(CmdArgumentSet& args);
+	bool setMemberComment(CmdArgumentSet& args);
 
-	bool addAncestor(CmdArgumentSet& args); //const char * structName, const char * ancestorName);
-	bool insertAncestor(CmdArgumentSet& args); //const char * structName, const char * ancestorName, _Opt_ const char * beforeAncestor);
-	bool removeAncestor(CmdArgumentSet& args); //const char * structName, const char * ancestorName);
-	
-	bool addMember(CmdArgumentSet& args); //const char * structName, const char * memberType, const char * memberName, _Opt_ duint array_size, _Opt_ duint offset);
-	//bool insertMember(CmdArgumentSet& args); //const char * structName, const char * memberType, const char * memberName, duint array_size, const char * beforeMember);
-
-	bool removeMember(CmdArgumentSet& args); //const char * structName, const char * memberName);
-	bool setMemberComment(CmdArgumentSet& args); //const char * structName, const char * memberName, _Opt_ const char * comment);
-
-	bool printStruct(CmdArgumentSet& args); //const char * structName);
+	bool printStruct(CmdArgumentSet& args);
 	bool removeAll(CmdArgumentSet& args);
+	bool sizeOfType(CmdArgumentSet& args);
 
-	int typeSize(const std::string& type) const;
-	//bool structSize(const std::string& structName, int * psize) const;
-	//int _structSize(const std::string& structName, std::vector<std::string>& stack) const;
+	int _sizeOfType(const std::string& type) const;
 	bool _beforeExpandStruct(const std::string& changedStruct, int expand_size);
 	bool _removeAncestor(_Struct& struc, std::vector<_Ancestor>::const_iterator itrAncestor);
 	bool _removeMember(_Struct& struc, size_t& memberId);

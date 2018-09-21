@@ -98,3 +98,4 @@ extern int hMenuStack;
 #define CMD_NAME_SET_MEMBER_COMMENT	"struct.setMemberComment"
 #define CMD_NAME_PRINT_STRUCT		"struct.print"
 #define CMD_NAME_REMOVE_ALL			"struct.removeAll"
+#define CMD_NAME_SIZEOFTYPE			"struct.sizeOfType"

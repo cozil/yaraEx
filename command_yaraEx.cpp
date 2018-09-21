@@ -435,12 +435,12 @@ void yaraEx::execScript()
 		std::string scriptfile = string_formatA("%s_%s.compile.scr", m_filePath.c_str(), identifier.c_str());			
 		std::string content;
 
-		auto str_replace = [](std::string& str, const std::string& find, const char * replace)
+		auto str_replace = [](std::string& str, const std::string& find, const char * replacedby)
 		{
 			auto pos = str.find(find.c_str());
 			while (pos != std::string::npos)
 			{
-				str.replace(pos, find.length(), replace);
+				str.replace(pos, find.length(), replacedby);
 				pos = str.find(find.c_str());
 			}
 		};
