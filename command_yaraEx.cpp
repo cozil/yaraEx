@@ -579,13 +579,6 @@ bool yaraEx::cmd_yaraEx(int argc, char *argv[])
 	m_cmdname = CMD_NAME_YARAEX;
 	m_logLevel = LOG_INFO;
 
-	if (argc < 2)
-	{
-		logputs(LL::Error, "Error: Not enough arguments!");
-		print_usages(m_cmdname.c_str());
-		return false;
-	}
-
 	if (!initModule(argv[2], argc > 3 ? argv[3] : nullptr))
 		return false;
 
@@ -608,12 +601,6 @@ bool yaraEx::cmd_yaraEx(int argc, char *argv[])
 bool yaraEx::_yarafind(int argc, char * argv[])
 {
 	cleanup();
-	if (argc < 3)
-	{
-		logputs(LL::Error, "Error: Not enough arguments!");
-		print_usages(m_cmdname.c_str());
-		return false;
-	}
 
 	if (!initModule(argv[1], argc > 3 ? argv[3] : nullptr))
 		return false;
