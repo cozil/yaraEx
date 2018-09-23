@@ -493,16 +493,15 @@ std::basic_string<_CharT>& trim_rightT(
 #define trim_string			trim_stringT<TCHAR> 
 
 template<typename _T>
-std::basic_string<_T>& trim_stringT(
-	std::basic_string<_T>& str, char ch = ' ')
+std::basic_string<_T>& trim_stringT(std::basic_string<_T>& str, char ch = ' ')
 {
 	return trim_right(trim_left(str, ch), ch);
 }
 
 template<typename _T>
-std::basic_string<_T>& trim_stringT(const _T * sz, char ch = ' ')
+std::basic_string<_T> trim_stringT(const _T * sz, char ch = ' ')
 {
-	std::basic_string<_T> str(sz);
+	std::basic_string<_T> str = sz;
 	return trim_right(trim_left(str, ch), ch);
 }
 

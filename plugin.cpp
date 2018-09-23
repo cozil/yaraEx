@@ -189,6 +189,16 @@ bool pluginInit(PLUG_INITSTRUCT* initStruct)
 		TRY_CALL(_typeHelper.cmd_type_Reference, 1);
 	}, false);
 
+	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_ADD_DECLARATION, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_typeHelper.cmd_type_AddDeclaration, 2);
+	}, false);
+
+	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_REMOVE_DECLARATION, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_typeHelper.cmd_type_removeDeclaration, 2);
+	}, false);
+
     return true; //Return false to cancel loading the plugin.
 }
 

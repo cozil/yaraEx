@@ -1,0 +1,37 @@
+type.as CRxObject
+type.am CRxObject,int,vftable
+type.am CRxObject,CRxObject*,parent
+type.am CRxObject,int,objtype
+type.am CRxObject,short,index
+type.am CRxObject,short,_pad_0e
+
+type.as CRxStuff
+type.am CRxStuff,int,code,0,4c
+type.am CRxStuff,char,name,48,5c
+type.am CRxStuff,short,list_id,0,1f2
+type.am CRxStuff,int,s_binding,0,204
+type.am CRxStuff,int,codeEx,0,50
+type.am CRxStuff,int,s_code2,0,58
+type.am CRxStuff,int,s_code1,0,54
+type.am CRxStuff,int,school,0,a4
+type.am CRxStuff,char,job,0,b0
+type.am CRxStuff,short,k_open,0,1f6
+type.am CRxStuff,short,id,0,1f4
+type.aanc CRxStuff,CRxObject
+type.am CRxStuff,int,local_career,0,a8
+type.am CRxStuff,int,grade,0,ac
+
+type.as CRxTest
+type.am CRxTest,int,field1
+type.am CRxTest,int*,field2
+type.am CRxTest,uint64,field3
+
+type.au _SZ_VALUE
+type.am _SZ_VALUE,char,text,10
+type.am _SZ_VALUE,char*,lpsz
+
+type.as RX_STRING
+type.am RX_STRING,_SZ_VALUE,u
+type.am RX_STRING,int,length
+type.am RX_STRING,int,bufflen
+type.am RX_STRING,int,padding

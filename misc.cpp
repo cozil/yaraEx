@@ -161,7 +161,23 @@ static const std::vector<CmdHelp> _cmd_helps =
 		CMD_TYPE_REFERENCE,
 		"Usage: %s <arg1>\n"
 		"  <arg1>: Name of struct/union.\n"
-	}
+	},
+
+	{
+		CMD_TYPE_ADD_DECLARATION,
+		"Usage: %s <arg1>, <arg2>\n"
+		"  <arg1>: Name of struct.\n"
+		"  <arg2>: Declaration text.\n"
+		"  They will be outputed as it is while using command Type.print.\n"
+		"  You can put function declarations here.\n"
+	},
+
+	{
+		CMD_TYPE_REMOVE_DECLARATION,
+		"Usage: %s <arg1>, <arg2>\n"
+		"  <arg1>: Name of struct.\n"
+		"  <arg2>: Keyword to search in declaration text.\n"
+	},
 };
 
 void print_usages(const char * cmdname)

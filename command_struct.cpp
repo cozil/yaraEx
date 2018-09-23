@@ -12,12 +12,12 @@ bool eval(const char * expression, int& result)
 };
 
 //Fill 'text' with space char at right side til the 'text' length equals 'maxlength'
-void fill_spaces(std::string& text, int maxlength)
+void str_fill(std::string& text, int maxlength, char ch)
 {
 	if (maxlength > 0 && text.size() < (size_t)maxlength)
 		text.append((size_t)maxlength - text.size() + 1, ' ');
 	else
-		text.append(1, ' ');
+		text.append(1, ch);
 }
 
 //Replace 'find' to 'replaceby' in 'str'
@@ -368,9 +368,52 @@ bool CTypeHelper::cmd_type_Reference(int argc, char* argv[])
 	return true;
 }
 
+bool CTypeHelper::cmd_type_AddDeclaration(int argc, char* argv[])
+{
+	std::string typeName = trim_stringA(argv[1]);
+	std::string declare = trim_stringA(argv[2]);
+
+	auto itrStruct = m_structs.find(typeName);
+	if (itrStruct != m_structs.end())
+	{
+		itrStruct->second.declarations.push_back(declare);
+		return true;
+	}
+
+	logprintf(LL::Warning, "Struct \"%s\" doesn't exists!", typeName.c_str());
+	return false;
+}
+
+bool CTypeHelper::cmd_type_removeDeclaration(int argc, char* argv[])
+{
+	std::string typeName = trim_stringA(argv[1]);
+	std::string key = trim_stringA(argv[2]);
+	auto itrStruct = m_structs.find(typeName);
+	int removeCount = 0;
+	if (itrStruct != m_structs.end())
+	{
+		auto& declarations = itrStruct->second.declarations;
+		for (int i = (int)declarations.size() - 1; i >= 0; --i)
+		{
+			if (declarations[i].find(key) != std::string::npos)
+			{
+				declarations.erase(declarations.cbegin() + i);
+				++removeCount;
+			}
+		}
+
+		logprintf(LL::Message, "%d declarations have been removed from struct \"%s\"!", 
+			removeCount, typeName.c_str());
+		return true;
+	}
+
+	logprintf(LL::Warning, "Struct \"%s\" doesn't exists!", typeName.c_str());
+	return false;
+}
+
 bool CTypeHelper::structRemove(StructMap::const_iterator itrStruct)
 {
-	const std::string& structName = itrStruct->second.name;
+	const std::string structName = itrStruct->second.name;
 	std::vector<_Struct> interim;
 	for (auto& pair : m_structs)
 	{
@@ -737,7 +780,16 @@ void CTypeHelper::structPrint(const _Struct& struc, int offsetLen, int typeLen, 
 	if (str.size() != 0)
 		result += ":" + str;
 	result += "\n{\n";
-		
+
+	//declarations
+	std::for_each(struc.declarations.cbegin(), struc.declarations.cend(), [&result](const std::string& text)
+	{ 
+		auto str = text;
+		str_replace(str, "\\n", "\n");
+		result += string_formatA("    %s\n", str.c_str()); 
+	});
+	
+	//members
 	for (const auto& member : struc.members)
 	{
 		bool set_comment = (member.comment.size() != 0);
@@ -771,7 +823,7 @@ void CTypeHelper::structPrint(const _Struct& struc, int offsetLen, int typeLen, 
 
 		//Formatting type name text
 		str = member.type;
-		fill_spaces(str, typeLen);
+		str_fill(str, typeLen, ' ');
 		result += str;
 
 		//Formatting member name text
@@ -782,7 +834,7 @@ void CTypeHelper::structPrint(const _Struct& struc, int offsetLen, int typeLen, 
 
 		if (set_comment)
 		{
-			fill_spaces(str, memberLen);
+			str_fill(str, memberLen, ' ');
 			result += str;
 			result += " // ";
 			result += member.comment;
@@ -835,24 +887,11 @@ void CTypeHelper::unionPrint(const _Union& un, int offsetLen, int typeLen, int m
 		if (offsetLen > sizeof(void*))
 			offsetLen = -1;
 
-		//Formatting offset text
-		//if (offsetLen < 0)
-		//{
-		//	result += string_formatA("/*%p*/    ", member.offset);
-		//}
-		//else if (offsetLen > 0)
-		//{
-		//	result += string_formatA(string_formatA("/*%%0%dx*/    ", offsetLen).c_str(),
-		//		member.offset);
-		//}
-		//else
-		//{
 		result += "    ";
-		//}
 
 		//Formatting type name text
 		str = member.type;
-		fill_spaces(str, typeLen);
+		str_fill(str, typeLen, ' ');
 		result += str;
 
 		//Formatting member name text
@@ -863,7 +902,7 @@ void CTypeHelper::unionPrint(const _Union& un, int offsetLen, int typeLen, int m
 
 		if (set_comment)
 		{
-			fill_spaces(str, memberLen);
+			str_fill(str, memberLen, ' ');
 			result += str;
 			result += " // ";
 			result += member.comment;
@@ -930,7 +969,8 @@ bool CTypeHelper::unionAddMember(_Union& un, _Member& member)
 	}
 
 	//Recaculating the size of union.
-	int union_size = max(member.type_size, un.size);
+	int member_size = member.get_size();
+	int union_size = max(member_size, un.size);
 	int expand_size = union_size - un.size;
 
 	//Update all structs who own members of this union type

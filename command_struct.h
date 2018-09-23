@@ -67,6 +67,17 @@ public:
 			ispadding = member.ispadding;
 			return *this;
 		}
+
+		_Member& operator=(_Member&& member)
+		{
+			type = member.type;
+			name = member.name;
+			type_size = member.type_size;
+			array_size = member.array_size;
+			offset = member.offset;
+			ispadding = member.ispadding;
+			return *this;
+		}
 	};
 
 	struct _Ancestor
@@ -94,6 +105,7 @@ public:
 		std::string name;
 		std::vector<_Ancestor> ancestors;
 		std::vector<_Member> members;
+		std::vector<std::string> declarations;
 		std::string comment;
 		int size;
 
@@ -104,6 +116,18 @@ public:
 			members = struc.members;
 			size = struc.size;
 			comment = struc.comment;
+			declarations = struc.declarations;
+			return *this;
+		}
+
+		_Struct& operator=(_Struct&& struc)
+		{
+			name = struc.name;
+			ancestors = struc.ancestors;
+			members = struc.members;
+			size = struc.size;
+			comment = struc.comment;
+			declarations = struc.declarations;
 			return *this;
 		}
 	};
@@ -123,6 +147,15 @@ public:
 			comment = u.comment;
 			return *this;
 		}
+
+		_Union& operator=(_Union&& u)
+		{
+			name = u.name;
+			members = u.members;
+			size = u.size;
+			comment = u.comment;
+			return *this;
+		}
 	};
 
 	typedef std::unordered_map<std::string, _Union> UnionMap;
@@ -132,8 +165,6 @@ public:
 public:
 	CTypeHelper();
 	~CTypeHelper();
-
-
 	
 	bool cmd_type_AddStruct(int argc, char* argv[]);
 	bool cmd_type_AddUnion(int argc, char* argv[]);
@@ -149,6 +180,8 @@ public:
 	bool cmd_type_InsertAncestor(int argc, char* argv[]);
 	bool cmd_type_RemoveAncestor(int argc, char* argv[]);
 	bool cmd_type_Reference(int argc, char* argv[]);
+	bool cmd_type_AddDeclaration(int argc, char* argv[]);
+	bool cmd_type_removeDeclaration(int argc, char* argv[]);
 	
 protected:
 	bool structAddMember(_Struct& struc, _Member& member);

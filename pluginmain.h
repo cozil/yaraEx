@@ -87,10 +87,10 @@ extern int hMenuStack;
 #define CMD_YARAFIND						"yarafind"
 #define CMD_YARAFINDALL						"yarafindall"
 
-#define CMD_TYPE_STRUCT_ADD					"Type.AddStruct,Type.as"
-#define CMD_TYPE_UNION_ADD					"Type.AddUnion,Type.au"
-#define CMD_TYPE_REMOVE						"Type.Remove"
-#define CMD_TYPE_ADD_MEMBER					"Type.AddMember,Type.am"
+#define CMD_TYPE_STRUCT_ADD					"Type.addStruct,Type.as"
+#define CMD_TYPE_UNION_ADD					"Type.addUnion,Type.au"
+#define CMD_TYPE_REMOVE						"Type.remove"
+#define CMD_TYPE_ADD_MEMBER					"Type.addMember,Type.am"
 #define CMD_TYPE_REMOVE_MEMBER				"Type.removeMember,Type.rm"
 #define CMD_TYPE_SET_COMMENT				"Type.comment"
 #define CMD_TYPE_SET_MEMBER_COMMENT			"Type.memberComment,Type.mcomment"
@@ -103,6 +103,8 @@ extern int hMenuStack;
 #define CMD_TYPE_ADD_ANCESTOR				"Type.addAncestor,Type.aanc"
 #define CMD_TYPE_INSERT_ANCESTOR			"Type.insertAncestor,Type.ianc"
 #define CMD_TYPE_REMOVE_ANCESTOR			"Type.removeAncestor,Type.ranc"
+#define CMD_TYPE_ADD_DECLARATION			"Type.addDeclaration,Type.ad"
+#define CMD_TYPE_REMOVE_DECLARATION			"Type.removeDeclaration,Type.rd"
 
 
 
