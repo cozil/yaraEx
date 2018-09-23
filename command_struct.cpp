@@ -73,7 +73,7 @@ CTypeHelper::~CTypeHelper()
 bool CTypeHelper::cmd_type_AddStruct(int argc, char* argv[])
 {
 	_Struct struc;
-	struc.name = argv[1];
+	struc.name = trim_stringA(argv[1]);
 	struc.size = 0;
 
 	if (_typeExists(struc.name))
@@ -90,7 +90,7 @@ bool CTypeHelper::cmd_type_AddStruct(int argc, char* argv[])
 bool CTypeHelper::cmd_type_AddUnion(int argc, char* argv[])
 {
 	_Union u;
-	u.name = argv[1];
+	u.name = trim_stringA(argv[1]);
 	u.size = 0;
 
 	if (_typeExists(u.name))
@@ -106,7 +106,7 @@ bool CTypeHelper::cmd_type_AddUnion(int argc, char* argv[])
 
 bool CTypeHelper::cmd_type_Remove(int argc, char* argv[])
 {
-	std::string typeName = argv[1];
+	std::string typeName = trim_stringA(argv[1]);
 	auto itrStruct = m_structs.find(typeName);
 	if (itrStruct != m_structs.cend())
 		return structRemove(itrStruct);
@@ -122,9 +122,9 @@ bool CTypeHelper::cmd_type_Remove(int argc, char* argv[])
 bool CTypeHelper::cmd_type_AddMember(int argc, char* argv[])
 {
 	_Member member;
-	std::string typeName = argv[1];
-	member.type = argv[2];
-	member.name = argv[3];
+	std::string typeName = trim_stringA(argv[1]);
+	member.type = trim_stringA(argv[2]);
+	member.name = trim_stringA(argv[3]);
 	member.offset = -1;
 	member.array_size = 0;
 	member.ispadding = false;
@@ -162,8 +162,8 @@ bool CTypeHelper::cmd_type_AddMember(int argc, char* argv[])
 
 bool CTypeHelper::cmd_type_RemoveMember(int argc, char* argv[])
 {
-	std::string typeName = argv[1];
-	std::string memberName = argv[2];
+	std::string typeName = trim_stringA(argv[1]);
+	std::string memberName = trim_stringA(argv[2]);
 
 	auto itrStruct = m_structs.find(typeName);
 	if (itrStruct != m_structs.end())
@@ -179,10 +179,10 @@ bool CTypeHelper::cmd_type_RemoveMember(int argc, char* argv[])
 
 bool CTypeHelper::cmd_type_SetComment(int argc, char* argv[])
 {
-	std::string typeName = argv[1];
+	std::string typeName = trim_stringA(argv[1]);
 	std::string comment;
 
-	if (argc > 2) comment = argv[2];
+	if (argc > 2) comment = trim_stringA(argv[2]);
 
 	auto itrStruct = m_structs.find(typeName);
 	if (itrStruct != m_structs.end())
@@ -204,11 +204,11 @@ bool CTypeHelper::cmd_type_SetComment(int argc, char* argv[])
 
 bool CTypeHelper::cmd_type_SetMemberComment(int argc, char* argv[])
 {
-	std::string typeName = argv[1];
-	std::string memberName = argv[2];
+	std::string typeName = trim_stringA(argv[1]);
+	std::string memberName = trim_stringA(argv[2]);
 	std::string comment;
 
-	if (argc > 3) comment = argv[3];
+	if (argc > 3) comment = trim_stringA(argv[3]);
 
 	auto itrStruct = m_structs.find(typeName);
 	if (itrStruct != m_structs.cend())
@@ -252,7 +252,7 @@ bool CTypeHelper::cmd_type_SetMemberComment(int argc, char* argv[])
 
 bool CTypeHelper::cmd_type_Print(int argc, char* argv[])
 {
-	std::string typeName = argv[1];
+	std::string typeName = trim_stringA(argv[1]);
 	int offsetLen = -1, typeLen = 0, memberLen = 0;
 
 	if (argc > 2 && !eval(argv[2], offsetLen))
@@ -295,15 +295,15 @@ bool CTypeHelper::cmd_type_RemoveAll(int argc, char* argv[])
 
 bool CTypeHelper::cmd_type_Size(int argc, char* argv[])
 {
-	int size = _sizeOfType(argv[1]);
+	int size = _sizeOfType(trim_stringA(argv[1]));
 	logprintf(LL::Message, "sizeof(%s) = 0x%x (.%d)", argv[1], size, size);
 	return DbgScriptCmdExec(string_formatA("$RESULT=0x%x", size).c_str());
 }
 
 bool CTypeHelper::cmd_type_AddAncestor(int argc, char* argv[])
 {
-	std::string typeName = argv[1];
-	std::string ancName = argv[2];
+	std::string typeName = trim_stringA(argv[1]);
+	std::string ancName = trim_stringA(argv[2]);
 	std::string beforeAnc;
 
 	return structInsertAncestor(typeName, ancName, beforeAnc);
@@ -311,8 +311,8 @@ bool CTypeHelper::cmd_type_AddAncestor(int argc, char* argv[])
 
 bool CTypeHelper::cmd_type_InsertAncestor(int argc, char* argv[])
 {
-	std::string typeName = argv[1];
-	std::string ancName = argv[2];
+	std::string typeName = trim_stringA(argv[1]);
+	std::string ancName = trim_stringA(argv[2]);
 	std::string beforeAnc;
 	if (argc > 3)
 		beforeAnc = argv[3];
@@ -322,14 +322,14 @@ bool CTypeHelper::cmd_type_InsertAncestor(int argc, char* argv[])
 
 bool CTypeHelper::cmd_type_RemoveAncestor(int argc, char* argv[])
 {
-	std::string typeName = argv[1];
-	std::string ancName = argv[2];
+	std::string typeName = trim_stringA(argv[1]);
+	std::string ancName = trim_stringA(argv[2]);
 	return structRemoveAncestor(typeName, ancName);
 }
 
 bool CTypeHelper::cmd_type_Reference(int argc, char* argv[])
 {
-	std::string typeName = argv[1];
+	std::string typeName = trim_stringA(argv[1]);
 	int count = 0;
 
 	for (const auto& v : m_structs)
