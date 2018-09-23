@@ -2,28 +2,41 @@
 #include "misc.h"
 #include <algorithm>
 
-BEGIN_STRUCT_CMD_MAP(CStructHelper)
-	ON_STRUCT_CMD(CMD_NAME_ADD_STRUCT, 1, &addStruct)
-	ON_STRUCT_CMD(CMD_NAME_REMOVE_STRUCT, 1, &removeStruct)
-	ON_STRUCT_CMD(CMD_NAME_ADD_ANCESTOR, 2, &addAncestor)
-	ON_STRUCT_CMD(CMD_NAME_INSERT_ANCESTOR, 2, &insertAncestor)
-	ON_STRUCT_CMD(CMD_NAME_REMOVE_ANCESTOR, 2, &removeAncestor)
-	ON_STRUCT_CMD(CMD_NAME_ADD_MEMBER, 3, &addMember)
-	//ON_STRUCT_CMD(CMD_NAME_INSERT_MEMBER, 3, &insertMember)
-	ON_STRUCT_CMD(CMD_NAME_REMOVE_MEMBER, 2, &removeMember)
-	ON_STRUCT_CMD(CMD_NAME_SET_MEMBER_COMMENT, 2, &setMemberComment)
-	ON_STRUCT_CMD(CMD_NAME_PRINT_STRUCT, 1, &printStruct)
-	ON_STRUCT_CMD(CMD_NAME_REMOVE_ALL, 0, &removeAll)
-	ON_STRUCT_CMD(CMD_NAME_SIZEOFTYPE, 1, &sizeOfType)
-END_STRUCT_CMD_MAP()
+bool eval(const char * expression, int& result)
+{
+	bool success;
+	result = (int)DbgEval(expression, &success);
+	if (!success)
+		logprintf(LL::Error, "Invalid expression: \"%s\"", expression);
+	return success;
+};
+
+//Fill 'text' with space char at right side til the 'text' length equals 'maxlength'
+void fill_spaces(std::string& text, int maxlength)
+{
+	if (maxlength > 0 && text.size() < (size_t)maxlength)
+		text.append((size_t)maxlength - text.size() + 1, ' ');
+	else
+		text.append(1, ' ');
+}
+
+//Replace 'find' to 'replaceby' in 'str'
+void str_replace(std::string& str, const std::string& find, const char * replacedby)
+{
+	auto pos = str.find(find.c_str());
+	while (pos != std::string::npos)
+	{
+		str.replace(pos, find.length(), replacedby);
+		pos = str.find(find.c_str());
+	}
+}
 
 CStructHelper::CStructHelper()
 {
 	auto p = [this](const std::string & n, Primitive p, int size)
 	{
 		m_primitivesizes[p] = size;
-		std::vector<std::string> splits;
-		split_stringA(n, splits, ",");
+		std::vector<std::string> splits = split_stringA(n, ",");
 		for (const auto & split : splits)
 		{
 			_Type t;
@@ -55,185 +68,298 @@ CStructHelper::~CStructHelper()
 {
 }
 
-int CStructHelper::_sizeOfType(const std::string& type) const
+
+
+bool CStructHelper::cmd_type_AddStruct(int argc, char* argv[])
 {
-	auto found = m_types.find(type);
-	if (found != m_types.cend())
-		return found->second.size;
-
-	auto pos = type.find('*');
-	if (pos != std::string::npos)
-	{
-		std::string rest = trim_rightA(type.substr(pos));
-		std::string structName = trim_rightA(type.substr(0, pos));
-
-		auto itrStruct = m_structs.find(structName);
-		if (itrStruct != m_structs.cend() && rest == "*")
-			return m_primitivesizes.at(Pointer);
-	}
-	else
-	{
-		auto itrStruct = m_structs.find(type);
-		if (itrStruct != m_structs.cend())
-			return itrStruct->second.size;
-	}
-
-	return -1;
-}
-
-bool CStructHelper::doCommand(int argc, char ** argv)
-{
-	if (argc <= 0 || !argv)
-		return false;
-
-	CmdArgumentSet args;
-	std::string cmdName = argv[0];
-
-	auto pos = cmdName.find(' ');
-	if (pos == std::string::npos)
-		pos = cmdName.find('\t');
-	if (pos != std::string::npos)
-		cmdName.erase(cmdName.cbegin() + pos, cmdName.cend());
-
-	auto eval = [&cmdName](const char * expression, int& result) -> bool
-	{
-		bool success;
-		result = (int)DbgEval(expression, &success);
-		if (!success)
-			logprintf(LL::Error, "Invalid expression: \"%s\"", expression);
-		return success;
-	};
-
-	const STRUCT_CMD_ENTRY * pEntries = GetCmdEntries();
-	while (pEntries->cmd_name)
-	{
-		if (!compare_stringA(cmdName, pEntries->cmd_name, true))
-			break;
-		++pEntries;
-	}
-
-	if (!pEntries->cmd_name || !pEntries->fnCmdCall)
-	{
-		logprintf(LL::Error, "Internal error: command entry not found!");
-		return false;
-	}
-	
-	int min_argc = pEntries->min_argc;
-	if (argc <= min_argc)
-	{
-		logprintf(LL::Error, "Not enough Arguments!");
-		print_usages(pEntries->cmd_name);
-		return false;
-	}
-
-	if (!compare_stringA(cmdName, CMD_NAME_SIZEOFTYPE, true) || 
-		!compare_stringA(cmdName, CMD_NAME_ADD_STRUCT, true) ||
-		!compare_stringA(cmdName, CMD_NAME_REMOVE_STRUCT, true))
-	{
-		args.structName = argv[1];
-	}
-	else if (
-		!compare_stringA(cmdName, CMD_NAME_ADD_ANCESTOR, true) ||
-		!compare_stringA(cmdName, CMD_NAME_INSERT_ANCESTOR, true) ||
-		!compare_stringA(cmdName, CMD_NAME_REMOVE_ANCESTOR, true))
-	{
-		args.structName = argv[1];
-		args.ancestorName = argv[2];
-		if (argc > 3)
-			args.beforeAncestor = argv[3];
-	}
-	else if (
-		!compare_stringA(cmdName, CMD_NAME_ADD_MEMBER, true)) // ||	!compare_stringA(cmdName, CMD_NAME_INSERT_MEMBER, true))
-	{
-		args.structName = argv[1];
-		args.memberType = argv[2];
-		args.memberName = argv[3];
-		if (argc > 4 && !eval(argv[4], args.arraySize))
-			return false;
-
-		if (argc > 5 && !eval(argv[5], args.memberOffset))
-			return false;
-	}
-	else if (
-		!compare_stringA(cmdName, CMD_NAME_REMOVE_MEMBER, true) ||
-		!compare_stringA(cmdName, CMD_NAME_SET_MEMBER_COMMENT, true))
-	{
-		args.structName = argv[1];
-		args.memberName = argv[2];
-		if (argc > 3)
-			args.comment = argv[3];
-	}
-	else if (!compare_stringA(cmdName, CMD_NAME_PRINT_STRUCT, true))
-	{
-		args.structName = argv[1];
-		if (argc > 2 && !eval(argv[2], args.offsetLength))
-			return false;
-
-		if (argc > 3 && !eval(argv[3], args.typeLength))
-			return false;
-
-		if (argc > 4 && !eval(argv[4], args.memberNameLength))
-			return false;
-	}
-
-	return (this->*pEntries->fnCmdCall)(args);
-}
-
-bool CStructHelper::addStruct(CmdArgumentSet& args)
-{
-	if (m_structs.find(args.structName) != m_structs.cend())
-	{
-		logprintf(LL::Warning, "struct \"%s\" already exists!", args.structName.c_str());
-		return false;
-	}
-
 	_Struct struc;
-	struc.name = args.structName;
+	struc.name = argv[1];
 	struc.size = 0;
-	m_structs.insert({ args.structName, struc });
-	logprintf(LL::Message, "Struct \"%s\" has been added!", args.structName.c_str());
+
+	if (_typeExists(struc.name))
+	{
+		logprintf(LL::Warning, "Type \"%s\" already exists!", struc.name.c_str());
+		return false;
+	}
+
+	m_structs.insert({ struc.name, struc });
+	logprintf(LL::Message, "Struct \"%s\" has been added!", struc.name.c_str());
 	return true;
 }
 
-
-bool CStructHelper::removeStruct(CmdArgumentSet& args)
+bool CStructHelper::cmd_type_AddUnion(int argc, char* argv[])
 {
-	auto itrStruct = m_structs.find(args.structName);
-	if (itrStruct == m_structs.cend())
+	_Union u;
+	u.name = argv[1];
+	u.size = 0;
+
+	if (_typeExists(u.name))
 	{
-		logprintf(LL::Warning, "Struct \"%s\" doesn't exists!", args.structName.c_str());
+		logprintf(LL::Warning, "Type \"%s\" already exists!", u.name.c_str());
 		return false;
 	}
 
+	m_unions.insert({ u.name, u });
+	logprintf(LL::Message, "Union \"%s\" has been added!", u.name.c_str());
+	return true;
+}
+
+bool CStructHelper::cmd_type_Remove(int argc, char* argv[])
+{
+	std::string typeName = argv[1];
+	auto itrStruct = m_structs.find(typeName);
+	if (itrStruct != m_structs.cend())
+		return structRemove(itrStruct);
+
+	auto itrUnion = m_unions.find(typeName);
+	if (itrUnion != m_unions.cend())
+		return unionRemove(itrUnion);
+
+	logprintf(LL::Warning, "Type \"%s\" doesn't exists!", typeName.c_str());
+	return false;
+}
+
+bool CStructHelper::cmd_type_AddMember(int argc, char* argv[])
+{
+	_Member member;
+	std::string typeName = argv[1];
+	member.type = argv[2];
+	member.name = argv[3];
+	member.offset = -1;
+	member.array_size = 0;
+	member.ispadding = false;
+
+	if (!compare_stringA(typeName, member.type, true))
+	{
+		logprintf(LL::Error, "Unable to add a member of its own type.!");
+		return false;
+	}
+
+	if (argc > 4 && !eval(argv[4], member.array_size))
+		return false;
+
+	if (argc > 5 && !eval(argv[5], member.offset))
+		return false;
+
+	member.type_size = _sizeOfType(member.type);
+	if (member.type_size < 0)
+	{
+		logprintf(LL::Error, "Invalid type \"%s\"!", member.type.c_str());
+		return false;
+	}
+
+	auto itrStruct = m_structs.find(typeName);
+	if (itrStruct != m_structs.end())
+		return structAddMember(itrStruct->second, member);
+
+	auto itrUnion = m_unions.find(typeName);
+	if (itrUnion != m_unions.end())
+		return unionAddMember(itrUnion->second, member);
+
+	logprintf(LL::Warning, "Type \"%s\" doesn't exists!", typeName.c_str());
+	return false;
+}
+
+bool CStructHelper::cmd_type_RemoveMember(int argc, char* argv[])
+{
+	std::string typeName = argv[1];
+	std::string memberName = argv[2];
+
+	auto itrStruct = m_structs.find(typeName);
+	if (itrStruct != m_structs.end())
+		return structRemoveMember(itrStruct->second, memberName);
+
+	auto itrUnion = m_unions.find(typeName);
+	if (itrUnion != m_unions.end())
+		return unionRemoveMember(itrUnion->second, memberName);
+
+	logprintf(LL::Warning, "Type \"%s\" doesn't exists!", typeName.c_str());
+	return false;
+}
+
+bool CStructHelper::cmd_type_SetComment(int argc, char* argv[])
+{
+	std::string typeName = argv[1];
+	std::string comment;
+
+	if (argc > 2) comment = argv[2];
+
+	auto itrStruct = m_structs.find(typeName);
+	if (itrStruct != m_structs.end())
+	{
+		itrStruct->second.comment = comment;
+		return true;
+	}
+
+	auto itrUnion = m_unions.find(typeName);
+	if (itrUnion != m_unions.end())
+	{
+		itrUnion->second.comment = comment;
+		return true;
+	}
+
+	logprintf(LL::Warning, "Type \"%s\" doesn't exists!", typeName.c_str());
+	return false;
+}
+
+bool CStructHelper::cmd_type_SetMemberComment(int argc, char* argv[])
+{
+	std::string typeName = argv[1];
+	std::string memberName = argv[2];
+	std::string comment;
+
+	if (argc > 3) comment = argv[3];
+
+	auto itrStruct = m_structs.find(typeName);
+	if (itrStruct != m_structs.cend())
+	{
+		auto itrMember = std::find_if(itrStruct->second.members.begin(), itrStruct->second.members.end(),
+			[&memberName](_Member& member)
+		{ return !compare_stringA(member.name, memberName, true); });
+
+		if (itrMember == itrStruct->second.members.cend())
+		{
+			logprintf(LL::Warning, "Struct \"%s\" doesn't have member \"%s\"!",
+				typeName.c_str(), memberName.c_str());
+			return false;
+		}
+
+		itrMember->comment = comment;
+		return true;
+	}
+
+	auto itrUnion = m_unions.find(typeName);
+	if (itrUnion != m_unions.end())
+	{
+		auto itrMember = std::find_if(itrUnion->second.members.begin(), itrUnion->second.members.end(),
+			[&memberName](_Member& member)
+		{ return !compare_stringA(member.name, memberName, true); });
+
+		if (itrMember == itrUnion->second.members.cend())
+		{
+			logprintf(LL::Warning, "Union \"%s\" doesn't have member \"%s\"!",
+				typeName.c_str(), memberName.c_str());
+			return false;
+		}
+
+		itrMember->comment = comment;
+		return true;
+	}
+
+	logprintf(LL::Warning, "Type \"%s\" doesn't exists!", typeName.c_str());
+	return false;
+}
+
+bool CStructHelper::cmd_type_Print(int argc, char* argv[])
+{
+	std::string typeName = argv[1];
+	int offsetLen = -1, typeLen = 0, memberLen = 0;
+
+	if (argc > 2 && !eval(argv[2], offsetLen))
+		return false;
+	if (argc > 3 && !eval(argv[3], typeLen))
+		return false;
+	if (argc > 4 && !eval(argv[4], memberLen))
+		return false;
+
+	auto itrStruct = m_structs.find(typeName);
+	if (itrStruct != m_structs.cend())
+	{
+		structPrint(itrStruct->second, offsetLen, typeLen, memberLen);
+		return true;
+	}
+
+	auto itrUnion = m_unions.find(typeName);
+	if (itrUnion != m_unions.cend())
+	{
+		unionPrint(itrUnion->second, offsetLen, typeLen, memberLen);
+		return true;
+	}
+
+	logprintf(LL::Warning, "Type \"%s\" doesn't exists!", typeName.c_str());
+	return false;
+}
+
+bool CStructHelper::cmd_type_RemoveAll(int argc, char* argv[])
+{
+	size_t count = m_structs.size();
+	m_structs.clear();
+	logprintf(LL::Message, "All %d structs have been removed!", count);
+
+	count = m_unions.size();
+	m_unions.clear();
+	logprintf(LL::Message, "All %d unions have been removed!", count);
+
+	return true;
+}
+
+bool CStructHelper::cmd_type_Size(int argc, char* argv[])
+{
+	int size = _sizeOfType(argv[1]);
+	logprintf(LL::Message, "sizeof(%s) = 0x%x (.%d)", argv[1], size, size);
+	return DbgScriptCmdExec(string_formatA("$RESULT=0x%x", size).c_str());
+}
+
+bool CStructHelper::cmd_type_AddAncestor(int argc, char* argv[])
+{
+	std::string typeName = argv[1];
+	std::string ancName = argv[2];
+	std::string beforeAnc;
+
+	return structInsertAncestor(typeName, ancName, beforeAnc);
+}
+
+bool CStructHelper::cmd_type_InsertAncestor(int argc, char* argv[])
+{
+	std::string typeName = argv[1];
+	std::string ancName = argv[2];
+	std::string beforeAnc;
+	if (argc > 3)
+		beforeAnc = argv[3];
+
+	return structInsertAncestor(typeName, ancName, beforeAnc);
+}
+
+bool CStructHelper::cmd_type_RemoveAncestor(int argc, char* argv[])
+{
+	std::string typeName = argv[1];
+	std::string ancName = argv[2];
+	return structRemoveAncestor(typeName, ancName);
+}
+
+bool CStructHelper::structRemove(StructMap::const_iterator itrStruct)
+{
+	const std::string& structName = itrStruct->second.name;
 	std::vector<_Struct> interim;
 	for (auto& pair : m_structs)
 	{
 		_Struct struc = pair.second;
 		bool found = false;
-		auto itrAncestor = std::find_if(struc.ancestors.cbegin(), struc.ancestors.cend(), [&args](const _Ancestor& ancestor)
-		{ return !compare_stringA(ancestor.struct_name, args.structName, true); });
+		auto itrAncestor = std::find_if(struc.ancestors.cbegin(), struc.ancestors.cend(), 
+			[&structName](const _Ancestor& ancestor)
+		{ return !compare_stringA(ancestor.struct_name, structName, true); });
 
 		if (itrAncestor != struc.ancestors.cend())
 		{
-			if (!_removeAncestor(struc, itrAncestor))
+			if (!_structRemoveAncestor(struc, itrAncestor))
 				return false;
 
 			logprintf(LL::Message, "Struct \"%s\" has been removed from its derived struct \"%s\"!",
-				args.structName.c_str(), struc.name.c_str());
+				structName.c_str(), struc.name.c_str());
 			found = true;
 		}
 
 		for (size_t i = 0; i < struc.members.size(); ++i)
 		{
 			_Member& member = struc.members[i];
-			if (compare_stringA(member.name, args.structName, true))
+			if (compare_stringA(member.type, structName, true))
 				continue;
 
-			if (!_removeMember(struc, i))
+			if (!_structRemoveMember(struc, i))
 				return false;
 
 			logprintf(LL::Message, "Struct \"%s\" has been removed from struct \"%s\" as member \"%s\"!",
-				args.structName.c_str(), struc.name.c_str(), member.name.c_str());
+				structName.c_str(), struc.name.c_str(), member.name.c_str());
 			found = true;
 		}
 
@@ -249,67 +375,55 @@ bool CStructHelper::removeStruct(CmdArgumentSet& args)
 	}
 
 	m_structs.erase(itrStruct);
-	logprintf(LL::Message, "Struct \"%s\" has been removed!", args.structName.c_str());
-
+	logprintf(LL::Message, "Struct \"%s\" has been removed!", structName.c_str());
 	return false;
 }
 
-bool CStructHelper::addAncestor(CmdArgumentSet& args)
-{
-	args.beforeAncestor.clear();
-	return insertAncestor(args);
-}
 
-bool CStructHelper::insertAncestor(CmdArgumentSet& args)
+bool CStructHelper::structInsertAncestor(const std::string& typeName, const std::string& ancName, const std::string& beforeAnc)
 {
-	if (!compare_stringA(args.structName, args.ancestorName, true))
+	auto itrStruct = m_structs.find(typeName);
+	if (itrStruct == m_structs.end())
 	{
-		logprintf(LL::Error, "Unable to add itself to be ancestor!");
+		logprintf(LL::Warning, "Struct \"%s\" doesn't exists!", typeName.c_str());
 		return false;
 	}
 
-	auto itrStruct = m_structs.find(args.structName);
-	if (itrStruct == m_structs.cend())
-	{
-		logprintf(LL::Warning, "Struct \"%s\" doesn't exists!", args.structName.c_str());
-		return false;
-	}
-
-	auto itrAncestor = m_structs.find(args.ancestorName);
+	auto itrAncestor = m_structs.find(ancName);
 	if (itrAncestor == m_structs.cend())
 	{
-		logprintf(LL::Warning, "Ancestor struct \"%s\" doesn't exists!", args.ancestorName.c_str());
+		logprintf(LL::Warning, "Ancestor struct \"%s\" doesn't exists!", ancName.c_str());
 		return false;
 	}
 
 	_Struct& struc = itrStruct->second;
 	auto itr = std::find_if(struc.ancestors.cbegin(), struc.ancestors.cend(),
-		[&args](const _Ancestor& ancestor) 
-	{ return !compare_stringA(ancestor.struct_name, args.ancestorName, true); });
+		[&ancName](const _Ancestor& ancestor)
+	{ return !compare_stringA(ancestor.struct_name, ancName, true); });
 
 	if (itr != struc.ancestors.cend())
 	{
 		logprintf(LL::Warning, "Struct \"%s\" already has ancestor \"%s\"!",
-			args.structName.c_str(), args.ancestorName.c_str());
+			typeName.c_str(), ancName.c_str());
 		return false;
 	}
 
 	size_t insertAt = -1;
 	_Ancestor anc;
 
-	anc.struct_name = args.ancestorName;
+	anc.struct_name = ancName;
 	anc.access_type = _Ancestor::ACCESS_PUBLIC;
 
 	//Find insertion position
-	if (args.beforeAncestor.size())
+	if (beforeAnc.size())
 	{
 		itr = std::find_if(struc.ancestors.cbegin(), struc.ancestors.cend(),
-			[&args](const _Ancestor& ancestor)
-		{ return !compare_stringA(ancestor.struct_name, args.beforeAncestor, true); });
+			[&beforeAnc](const _Ancestor& ancestor)
+		{ return !compare_stringA(ancestor.struct_name, beforeAnc, true); });
 
 		if (itr == struc.ancestors.cend())
 		{
-			logprintf(LL::Warning, "Ancestor \"%s\" doesn't exists!", args.beforeAncestor.c_str());
+			logprintf(LL::Warning, "Ancestor \"%s\" doesn't exists!", beforeAnc.c_str());
 			return false;
 		}
 	}
@@ -322,13 +436,15 @@ bool CStructHelper::insertAncestor(CmdArgumentSet& args)
 	if (struc.members.size() != 0 &&
 		(!struc.members[0].ispadding || struc.members[0].get_size() < itrAncestor->second.size))
 	{
-		logprintf(LL::Error, "Not enough space for inserting ancestor \"%s\"!", args.ancestorName.c_str());
+		logprintf(LL::Error, "Not enough space for inserting ancestor \"%s\"!", ancName.c_str());
 		return false;
 	}
 
 	if (struc.members.size() != 0)
 	{
-		struc.members[0].set_padding(struc.members[0].offset + itrAncestor->second.size, struc.members[0].get_size() - itrAncestor->second.size);
+		struc.members[0].set_padding(struc.members[0].offset + itrAncestor->second.size, 
+			struc.members[0].get_size() - itrAncestor->second.size);
+
 		if (struc.members[0].array_size == 0)
 			struc.members.erase(struc.members.cbegin());
 	}
@@ -343,88 +459,50 @@ bool CStructHelper::insertAncestor(CmdArgumentSet& args)
 	struc.ancestors.insert(itr, anc);
 
 	logprintf(LL::Message, "Struct \"%s\" has been inserted into ancestor list of struct \"%s\"!",
-		args.ancestorName.c_str(), args.structName.c_str());
+		ancName.c_str(), typeName.c_str());
 	return true;
 
 }
 
-bool CStructHelper::removeAncestor(CmdArgumentSet& args)
+bool CStructHelper::structRemoveAncestor(const std::string& typeName, const std::string& ancName)
 {
-	auto itrStruct = m_structs.find(args.structName);
-	if (itrStruct == m_structs.cend())
+	auto itrStruct = m_structs.find(typeName);
+	if (itrStruct == m_structs.end())
 	{
-		logprintf(LL::Warning, "Struct \"%s\" doesn't exists!", args.structName.c_str());
+		logprintf(LL::Warning, "Struct \"%s\" doesn't exists!", typeName.c_str());
 		return false;
 	}
 
 	_Struct& struc = itrStruct->second;
-	auto itrAncestor = std::find_if(struc.ancestors.cbegin(), struc.ancestors.cend(), [&args](const _Ancestor& ancestor)
-	{ return !compare_stringA(ancestor.struct_name, args.ancestorName, true); });
+	auto itrAncestor = std::find_if(struc.ancestors.cbegin(), struc.ancestors.cend(), [&ancName](const _Ancestor& ancestor)
+	{ return !compare_stringA(ancestor.struct_name, ancName, true); });
 
 	if (itrAncestor == struc.ancestors.cend())
 	{
 		logprintf(LL::Warning, "Struct \"%s\" doesn't have ancestor \"%s\"!",
-			args.structName.c_str(), args.ancestorName.c_str());
+			typeName.c_str(), ancName.c_str());
 		return false;
 	}
 	
-	if (!_removeAncestor(struc, itrAncestor))
+	if (!_structRemoveAncestor(struc, itrAncestor))
 		return false;
 
 	logprintf(LL::Message, "Ancestor \"%s\" has been removed from struct \"%s\"!",
-		args.ancestorName.c_str(), args.structName.c_str());
+		ancName.c_str(), typeName.c_str());
 	return true;
 }
 
-bool CStructHelper::addMember(CmdArgumentSet& args)
+bool CStructHelper::structAddMember(_Struct& struc, _Member& member)
 {
-	if (!compare_stringA(args.structName, args.memberType, true))
-	{
-		logprintf(LL::Error, "Unable to add members of its own type to the structure.!");
-		return false;
-	}
-
-	auto itrStruct = m_structs.find(args.structName);
-	if (itrStruct == m_structs.cend())
-	{
-		logprintf(LL::Warning, "Struct \"%s\" doesn't exists!", args.structName.c_str());
-		return false;
-	}
-
-	_Struct& currentStruct = itrStruct->second;
-	if (currentStruct.members.cend() != std::find_if(currentStruct.members.cbegin(), currentStruct.members.cend(), [&args](const _Member& member)
-	{ return !compare_stringA(member.name, args.memberName, true); }))
+	if (struc.members.cend() != std::find_if(struc.members.cbegin(), struc.members.cend(),
+		[&member](const _Member& _member)
+	{ return !compare_stringA(member.name, _member.name, true); }))
 	{
 		logprintf(LL::Warning, "Struct \"%s\" already has member \"%s\"!",
-			args.structName.c_str(), args.memberName.c_str());
+			struc.name.c_str(), member.name.c_str());
 		return false;
 	}
 	
-	_Member member;
-	member.name = args.memberName;
-	member.type = args.memberType;
-	member.type_size = _sizeOfType(member.type);
-	member.array_size = args.arraySize;
-	member.offset = args.memberOffset;
-	member.ispadding = false;
-
-	if (member.type_size < 0)
-	{
-		logprintf(LL::Error, "Invalid type \"%s\"!", member.type.c_str());
-		return false;
-	}
-
-	if (member.array_size == 0)
-	{
-		logprintf(LL::Debug, "Add member: /*%p*/ %s %s; sizeof(%s)=0x%x",
-			member.offset, member.type.c_str(), member.name.c_str(), member.name.c_str(), member.type_size);
-	}
-	else
-	{
-		logprintf(LL::Debug, "Add member: /*%p*/ %s %s[0x%x]; sizeof(%s)=0x%x",
-			member.offset, member.type.c_str(), member.name.c_str(), member.array_size, member.name.c_str(), member.type_size);
-	}
-
 	//Add member at the end. It will increase the struct size. Those structs
 	//who derived from it or have members of the struct must keep their sizes unchanged.
 	//The increased size which is member.type_size can be neutralized by an immediately followed padding block.
@@ -432,20 +510,20 @@ bool CStructHelper::addMember(CmdArgumentSet& args)
 
 	if (member.offset < 0)
 	{
-		if (!_beforeExpandStruct(args.structName, member.get_size()))
+		if (!_beforeExpandStruct(struc.name, member.get_size()))
 			return false;
 
-		member.offset = currentStruct.size;
-		currentStruct.size = member.get_next_offset();
-		currentStruct.members.push_back(member);
+		member.offset = struc.size;
+		struc.size = member.get_next_offset();
+		struc.members.push_back(member);
 	}
 	else
 	{
 		//find out which member is at address arg.memberOffset
 		size_t i;
-		for (i = 0; i < currentStruct.members.size(); ++i)
+		for (i = 0; i < struc.members.size(); ++i)
 		{
-			const _Member& m = currentStruct.members[i];
+			const _Member& m = struc.members[i];
 
 			logprintf(LL::Debug, "Comparing offset %p with first member at %p",
 				member.offset, m.offset);
@@ -468,46 +546,46 @@ bool CStructHelper::addMember(CmdArgumentSet& args)
 			return false;
 		}
 		
-		if (i < currentStruct.members.size())
+		if (i < struc.members.size())
 		{
-			if (!currentStruct.members[i].ispadding)
+			if (!struc.members[i].ispadding)
 			{
 				logprintf(LL::Error, "Can't add member inside \"%s\" at offset %p which is not a padding block!", 
-					currentStruct.members[i].name.c_str(), member.offset);
+					struc.members[i].name.c_str(), member.offset);
 				return false;
 			}
 
-			int increased_size = member.get_next_offset() - currentStruct.members[i].get_next_offset();
+			int increased_size = member.get_next_offset() - struc.members[i].get_next_offset();
 			logprintf(LL::Debug, "Increased size:%d", increased_size);
 
 			if (increased_size > 0)
 			{
-				if (i + 1 < currentStruct.members.size())
+				if (i + 1 < struc.members.size())
 				{
-					if (!currentStruct.members[i + 1].ispadding)
+					if (!struc.members[i + 1].ispadding)
 					{
 						logprintf(LL::Error, "Can't add member crossed with two members at offset %p. One of them is not a padding block!", 
 							member.offset);
 						return false;
 					}
 
-					currentStruct.members[i].set_padding(currentStruct.members[i].offset,
-						member.offset - currentStruct.members[i].offset);
+					struc.members[i].set_padding(struc.members[i].offset,
+						member.offset - struc.members[i].offset);
 
-					currentStruct.members[i + 1].set_padding(member.get_next_offset(),
-						currentStruct.members[i + 1].get_next_offset() - member.get_next_offset());
+					struc.members[i + 1].set_padding(member.get_next_offset(),
+						struc.members[i + 1].get_next_offset() - member.get_next_offset());
 
-					currentStruct.members.insert(currentStruct.members.cbegin() + i + 1, member);
+					struc.members.insert(struc.members.cbegin() + i + 1, member);
 				}
 				else
 				{
-					if (!_beforeExpandStruct(args.structName, increased_size))
+					if (!_beforeExpandStruct(struc.name, increased_size))
 						return false;
 
-					currentStruct.members[i].set_padding(currentStruct.members[i].offset,
-						member.offset - currentStruct.members[i].offset);
+					struc.members[i].set_padding(struc.members[i].offset,
+						member.offset - struc.members[i].offset);
 
-					currentStruct.members.push_back(member);
+					struc.members.push_back(member);
 				}
 			}
 			else
@@ -516,38 +594,38 @@ bool CStructHelper::addMember(CmdArgumentSet& args)
 				{
 					_Member padding;
 					padding.set_padding(member.get_next_offset(), - increased_size);
-					currentStruct.members.insert(currentStruct.members.cbegin() + i + 1, padding);
+					struc.members.insert(struc.members.cbegin() + i + 1, padding);
 				}
 
-				currentStruct.members[i].set_padding(currentStruct.members[i].offset,
-					member.offset - currentStruct.members[i].offset);
+				struc.members[i].set_padding(struc.members[i].offset,
+					member.offset - struc.members[i].offset);
 
-				if (currentStruct.members[i].array_size == 0)
-					currentStruct.members[i] = member;
+				if (struc.members[i].array_size == 0)
+					struc.members[i] = member;
 				else
-					currentStruct.members.insert(currentStruct.members.cbegin() + i + 1, member);
+					struc.members.insert(struc.members.cbegin() + i + 1, member);
 			}
 		}
 		else
 		{
-			int increased_size = member.get_next_offset() - currentStruct.size;
-			if (!_beforeExpandStruct(args.structName, increased_size))
+			int increased_size = member.get_next_offset() - struc.size;
+			if (!_beforeExpandStruct(struc.name, increased_size))
 				return false;
 
-			if (currentStruct.members.size() == 0 || !currentStruct.members[currentStruct.members.size()-1].ispadding)
+			if (struc.members.size() == 0 || !struc.members[struc.members.size() - 1].ispadding)
 			{
 				_Member padding;
-				padding.set_padding(currentStruct.size, member.offset - currentStruct.size);
-				currentStruct.members.push_back(padding);
+				padding.set_padding(struc.size, member.offset - struc.size);
+				struc.members.push_back(padding);
 			}
 			else
 			{
-				_Member& last = currentStruct.members[currentStruct.members.size() - 1];
+				_Member& last = struc.members[struc.members.size() - 1];
 				last.set_padding(last.offset, member.offset - last.offset);
 			}
 
-			currentStruct.size = member.get_next_offset();
-			currentStruct.members.push_back(member);
+			struc.size = member.get_next_offset();
+			struc.members.push_back(member);
 		}
 	}
 
@@ -556,77 +634,49 @@ bool CStructHelper::addMember(CmdArgumentSet& args)
 	return true;
 }
 
-bool CStructHelper::removeMember(CmdArgumentSet& args)
+bool CStructHelper::structRemoveMember(_Struct& struc, const std::string& memberName)
 {
-	auto itrStruct = m_structs.find(args.structName);
-	if (itrStruct == m_structs.cend())
-	{
-		logprintf(LL::Warning, "Struct \"%s\" doesn't exists!", args.structName.c_str());
-		return false;
-	}
+	auto itrMember = std::find_if(struc.members.cbegin(), struc.members.cend(),
+		[&memberName](const _Member& member)
+	{ return !compare_stringA(member.name, memberName, true); });
 
-	_Struct& currentStruct = itrStruct->second;
-	auto itrMember = std::find_if(currentStruct.members.cbegin(), currentStruct.members.cend(),
-		[&args](const _Member& member)
-	{ return !compare_stringA(member.name, args.memberName, true); });
-
-	if (itrMember == currentStruct.members.cend())
+	if (itrMember == struc.members.cend())
 	{
 		logprintf(LL::Warning, "Struct \"%s\" doesn't have member \"%s\"!",
-			args.structName.c_str(), args.memberName.c_str());
+			struc.name.c_str(), memberName.c_str());
 		return false;
 	}
 
-	size_t id = itrMember - currentStruct.members.cbegin();
-	if (!_removeMember(currentStruct, id))
+	size_t id = itrMember - struc.members.cbegin();
+	if (!_structRemoveMember(struc, id))
 		return false;
 
-	logprintf(LL::Message, "Member \"%s\" has been removed from \"%s\"!",
-		args.memberName.c_str(), args.structName.c_str());
+	logprintf(LL::Message, "Member \"%s\" has been removed from struct \"%s\"!",
+		memberName.c_str(), struc.name.c_str());
 	return true;
 }
 
-bool CStructHelper::setMemberComment(CmdArgumentSet& args)
+void CStructHelper::structPrint(const _Struct& struc, int offsetLen, int typeLen, int memberLen)
 {
-	auto itrStruct = m_structs.find(args.structName);
-	if (itrStruct == m_structs.cend())
-	{
-		logprintf(LL::Warning, "Struct \"%s\" doesn't exists!", args.structName.c_str());
-		return false;
-	}
-
-	_Struct& currentStruct = itrStruct->second;
-	auto itrMember = std::find_if(currentStruct.members.begin(), currentStruct.members.end(),
-		[&args](_Member& member)
-	{ return !compare_stringA(member.name, args.memberName, true); });
-
-	if (itrMember == currentStruct.members.cend())
-	{
-		logprintf(LL::Warning, "Struct \"%s\" doesn't have member \"%s\"!",
-			args.structName.c_str(), args.memberName.c_str());
-		return false;
-	}
-
-	itrMember->comment = args.comment;
-	return true;
-}
-
-bool CStructHelper::printStruct(CmdArgumentSet& args)
-{
-	auto itrStruct = m_structs.find(args.structName);
-	if (itrStruct == m_structs.cend())
-	{
-		logprintf(LL::Warning, "Struct \"%s\" doesn't exists!", args.structName.c_str());
-		return false;
-	}
-
-	const _Struct& struc = itrStruct->second;
 	std::string result, str;
-
 	result.reserve(1024);
-	result = string_formatA("//sizeof(%s):0x%x(%d)\nstruct %s",
-		struc.name.c_str(), struc.size,struc.size, struc.name.c_str());
 
+	//struct comment text
+	if (struc.comment.size())
+	{
+		result += string_formatA("/*\n%s\nsizeof(%s):0x%x(%d)\n*/\n",
+			struc.comment.c_str(), struc.name.c_str(), struc.size, struc.size);
+	}
+	else
+	{
+		result += string_formatA("//sizeof(%s):0x%x(%d)\n",
+			struc.name.c_str(), struc.size, struc.size);
+	}
+
+	//struct name
+	result += string_formatA("struct %s", struc.name.c_str());
+
+	//ancestors
 	std::for_each(struc.ancestors.cbegin(), struc.ancestors.cend(), [&str](const _Ancestor& ancestor)
 	{
 		if (str.size() != 0) str += ",";
@@ -647,27 +697,7 @@ bool CStructHelper::printStruct(CmdArgumentSet& args)
 	if (str.size() != 0)
 		result += ":" + str;
 	result += "\n{\n";
-
-	auto fill_spaces = [](std::string& text, int maxlength)
-	{
-		if (maxlength > 0 && text.size() < (size_t)maxlength)
-			text.append((size_t)maxlength - text.size() + 1, ' ');
-		else
-			text.append(1, ' ');
-	};
-
-	auto str_replace = [](std::string& str, const std::string& find, const char * replacedby)
-	{
-		auto pos = str.find(find.c_str());
-		while (pos != std::string::npos)
-		{
-			str.replace(pos, find.length(), replacedby);
-			pos = str.find(find.c_str());
-		}
-	};
-
-
-	
+		
 	for (const auto& member : struc.members)
 	{
 		bool set_comment = (member.comment.size() != 0);
@@ -681,17 +711,17 @@ bool CStructHelper::printStruct(CmdArgumentSet& args)
 			result += string_formatA("\n/*\n%s\n*/\n", str.c_str());
 		}
 
-		if (args.offsetLength > sizeof(void*))
-			args.offsetLength = -1;
+		if (offsetLen > sizeof(void*))
+			offsetLen = -1;
 
 		//Formatting offset text
-		if (args.offsetLength < 0)
+		if (offsetLen < 0)
 		{
 			result += string_formatA("/*%p*/    ", member.offset);
 		}
-		else if (args.offsetLength > 0)
+		else if (offsetLen > 0)
 		{
-			result += string_formatA(string_formatA("/*%%0%dx*/    ", args.offsetLength).c_str(),
+			result += string_formatA(string_formatA("/*%%0%dx*/    ", offsetLen).c_str(),
 				member.offset);
 		}
 		else
@@ -701,7 +731,7 @@ bool CStructHelper::printStruct(CmdArgumentSet& args)
 
 		//Formatting type name text
 		str = member.type;
-		fill_spaces(str, args.typeLength);
+		fill_spaces(str, typeLen);
 		result += str;
 
 		//Formatting member name text
@@ -712,7 +742,7 @@ bool CStructHelper::printStruct(CmdArgumentSet& args)
 
 		if (set_comment)
 		{
-			fill_spaces(str, args.memberNameLength);
+			fill_spaces(str, memberLen);
 			result += str;
 			result += " // ";
 			result += member.comment;
@@ -727,24 +757,205 @@ bool CStructHelper::printStruct(CmdArgumentSet& args)
 
 	result += "};\n";
 	_plugin_logputs(result.c_str());
-	return true;
 }
 
-bool CStructHelper::removeAll(CmdArgumentSet& args)
+
+void CStructHelper::unionPrint(const _Union& un, int offsetLen, int typeLen, int memberLen)
 {
-	size_t count = m_structs.size();
-	m_structs.clear();
-	logprintf(LL::Message, "All %d structs have been removed!", count);
-	return true;
+	std::string result, str;
+	result.reserve(1024);
+
+	//union comment text
+	if (un.comment.size())
+	{
+		result += string_formatA("/*\n%s\nsizeof(%s):0x%x(%d)\n*/\n",
+			un.comment.c_str(), un.name.c_str(), un.size, un.size);
+	}
+	else
+	{
+		result += string_formatA("//sizeof(%s):0x%x(%d)\n",
+			un.name.c_str(), un.size, un.size);
+	}
+
+	//union name
+	result += string_formatA("union %s\n{\n", un.name.c_str());
+	for (const auto& member : un.members)
+	{
+		bool set_comment = (member.comment.size() != 0);
+
+		//If comment text has multiple lines, putting it before member text
+		if (set_comment && member.comment.find("\\n") != std::string::npos)
+		{
+			set_comment = false;
+			str = member.comment;
+			str_replace(str, "\\n", "\n");
+			result += string_formatA("\n/*\n%s\n*/\n", str.c_str());
+		}
+
+		if (offsetLen > sizeof(void*))
+			offsetLen = -1;
+
+		//Formatting offset text
+		if (offsetLen < 0)
+		{
+			result += string_formatA("/*%p*/    ", member.offset);
+		}
+		else if (offsetLen > 0)
+		{
+			result += string_formatA(string_formatA("/*%%0%dx*/    ", offsetLen).c_str(),
+				member.offset);
+		}
+		else
+		{
+			result += "    ";
+		}
+
+		//Formatting type name text
+		str = member.type;
+		fill_spaces(str, typeLen);
+		result += str;
+
+		//Formatting member name text
+		if (member.array_size == 0)
+			str = string_formatA("%s;", member.name.c_str());
+		else
+			str = string_formatA("%s[0x%x];", member.name.c_str(), member.array_size);
+
+		if (set_comment)
+		{
+			fill_spaces(str, memberLen);
+			result += str;
+			result += " // ";
+			result += member.comment;
+		}
+		else
+		{
+			result += str;
+		}
+
+		result += "\n";
+	}
+
+	result += "};\n";
+	_plugin_logputs(result.c_str());
 }
 
-bool CStructHelper::sizeOfType(CmdArgumentSet& args)
+bool CStructHelper::unionRemove(UnionMap::const_iterator itrUnion)
 {
-	int size = _sizeOfType(args.structName);
-	logprintf(LL::Message, "sizeof(%s) = 0x%x (.%d)",
-		args.structName.c_str(), size, size);
+	const std::string& unionName = itrUnion->second.name;
+	std::vector<_Struct> interim;
+	for (auto& pair : m_structs)
+	{
+		_Struct struc = pair.second;
+		bool found = false;
+		for (size_t i = 0; i < struc.members.size(); ++i)
+		{
+			_Member& member = struc.members[i];
+			if (compare_stringA(member.name, unionName, true))
+				continue;
 
-	return DbgScriptCmdExec(string_formatA("$RESULT=0x%x", size).c_str());
+			if (!_structRemoveMember(struc, i))
+				return false;
+
+			logprintf(LL::Message, "Union \"%s\" has been removed from struct \"%s\" as member \"%s\"!",
+				unionName.c_str(), struc.name.c_str(), member.name.c_str());
+			found = true;
+		}
+
+		if (found)
+		{
+			interim.push_back(struc);
+		}
+	}
+
+	for (const _Struct& struc : interim)
+	{
+		m_structs[struc.name] = struc;
+	}
+
+	m_unions.erase(itrUnion);
+	logprintf(LL::Message, "Union \"%s\" has been removed!", unionName.c_str());
+
+	return false;
+}
+
+bool CStructHelper::unionAddMember(_Union& un, _Member& member)
+{
+	if (un.members.cend() != std::find_if(un.members.cbegin(), un.members.cend(), [&member](const _Member& _member)
+	{ return !compare_stringA(member.name, _member.name, true); }))
+	{
+		logprintf(LL::Warning, "Union \"%s\" already has member \"%s\"!",
+			un.name.c_str(), member.name.c_str());
+		return false;
+	}
+
+	//Recaculating the size of union.
+	int union_size = max(member.type_size, un.size);
+	int expand_size = union_size - un.size;
+
+	//Update all structs who own members of this union type
+	//while the size of this union is raised.	
+	if (expand_size > 0)
+	{
+		std::vector<_Struct> interim;
+		for (auto& pair : m_structs)
+		{
+			_Struct struc = pair.second;
+			bool found = false;
+			for (size_t i = 0; i < struc.members.size(); ++i)
+			{
+				_Member& member = struc.members[i];
+				if (compare_stringA(member.type, un.name, true))
+					continue;
+
+				if (i + 1 < struc.members.size() &&
+					struc.members[i + 1].ispadding &&
+					struc.members[i + 1].get_size() >= expand_size)
+				{
+					struc.members[i + 1].set_padding(
+						struc.members[i + 1].offset + expand_size,
+						struc.members[i + 1].get_size() - expand_size);
+
+					if (struc.members[i + 1].array_size == 0)
+					{
+						struc.members.erase(struc.members.cbegin() + i + 1);
+					}
+				}
+				else if (i + 1 >= struc.members.size() && !_isTypeUsed(struc.name))
+				{
+					//Do nothing
+				}
+				//The next member is not a padding block, or block size is smaller than expand_size.
+				else
+				{
+					logprintf(LL::Error, "Not enough space for expanding member in \"%s=>%s\"!",
+						struc.name.c_str(), member.name.c_str());
+					return false;
+				}
+
+				member.type_size = union_size;
+				found = true;
+			}
+
+			if (found)
+			{
+				interim.push_back(struc);
+			}
+		}
+
+		for (const _Struct& struc : interim)
+		{
+			m_structs[struc.name] = struc;
+		}
+	}
+
+	member.offset = 0;
+	un.members.push_back(member);
+	un.size = union_size;
+
+	logprintf(LL::Message, "Member \"%s\" successfully added!",
+		member.name.c_str());
+	return true;
 }
 
 bool CStructHelper::_beforeExpandStruct(const std::string& changedStruct, int expand_size)
@@ -831,14 +1042,14 @@ bool CStructHelper::_beforeExpandStruct(const std::string& changedStruct, int ex
 			interim.push_back(std::move(tempStruct));
 	}
 
-	//Save them.
+	//Saving them.
 	std::for_each(interim.begin(), interim.end(), [this](_Struct& struc)
 	{ m_structs[struc.name] = std::move(struc);	});
 
 	return true;
 }
 
-bool CStructHelper::_removeAncestor(_Struct& struc, std::vector<_Ancestor>::const_iterator itrAncestor)
+bool CStructHelper::_structRemoveAncestor(_Struct& struc, std::vector<_Ancestor>::const_iterator itrAncestor)
 {
 	auto& ancestorStruct = m_structs.find(itrAncestor->struct_name);
 	if (ancestorStruct == m_structs.end())
@@ -869,7 +1080,45 @@ bool CStructHelper::_removeAncestor(_Struct& struc, std::vector<_Ancestor>::cons
 	return true;
 }
 
-bool CStructHelper::_removeMember(_Struct& struc, size_t& memberId)
+bool CStructHelper::_isTypeUsed(const std::string& typeName) const
+{
+	for (auto& pair : m_structs)
+	{
+		if (pair.second.ancestors.cend() !=
+			std::find_if(pair.second.ancestors.cbegin(),
+			pair.second.ancestors.cend(),
+			[&typeName](const _Ancestor& ancestor)
+		{ return !compare_stringA(ancestor.struct_name, typeName, true); }))
+		{
+			return true;
+		}
+
+		if (pair.second.members.cend() !=
+			std::find_if(pair.second.members.cbegin(),
+			pair.second.members.cend(),
+			[&typeName](const _Member& member)
+		{ return !compare_stringA(member.type, typeName, true); }))
+		{
+			return true;
+		}
+	}
+
+	for (auto pair : m_unions)
+	{
+		if (pair.second.members.cend() !=
+			std::find_if(pair.second.members.cbegin(),
+			pair.second.members.cend(),
+			[&typeName](const _Member& member)
+		{ return !compare_stringA(member.type, typeName, true); }))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool CStructHelper::_structRemoveMember(_Struct& struc, size_t& memberId)
 {
 	if (memberId >= struc.members.size())
 	{
@@ -911,4 +1160,128 @@ bool CStructHelper::_removeMember(_Struct& struc, size_t& memberId)
 		}
 	}
 	return true;
+}
+
+
+bool CStructHelper::unionRemoveMember(_Union& un, const std::string& memberName)
+{
+	auto itrMember = std::find_if(un.members.begin(), un.members.end(),
+		[&memberName](_Member& member)
+	{ return !compare_stringA(member.name, memberName, true); });
+
+	if (itrMember == un.members.cend())
+	{
+		logprintf(LL::Warning, "Union \"%s\" doesn't have member \"%s\"!",
+			un.name.c_str(), memberName.c_str());
+		return false;
+	}
+
+	//Recaculating the size of union.
+	int new_size = 0;
+	for (const _Member& member : un.members)
+	{
+		if (!compare_stringA(member.name, memberName, true))
+			continue;
+
+		if (member.get_size() > new_size)
+			new_size = member.get_size();
+	}
+
+	//Update all structs who own members of this union type
+	//while the size of this union is cutdown.
+	int shrink_size = un.size - new_size;
+	if (shrink_size > 0)
+	{
+		std::vector<_Struct> interim;
+		for (auto& pair : m_structs)
+		{
+			_Struct struc = pair.second;
+			bool found = false;
+			for (size_t i = 0; i < struc.members.size(); ++i)
+			{
+				_Member& member = struc.members[i];
+				if (compare_stringA(member.type, un.name, true))
+					continue;
+
+				//The next member is a padding block.
+				//Just expand it.
+				if (i + 1 < struc.members.size() && struc.members[i + 1].ispadding)
+				{
+					struc.members[i + 1].set_padding(
+						struc.members[i + 1].offset - shrink_size,
+						struc.members[i + 1].get_size() + shrink_size);
+				}
+				//Or insert a new padding block.
+				else
+				{
+					_Member padding;
+					padding.set_padding(member.get_next_offset() - shrink_size,
+						shrink_size);
+					struc.members.insert(struc.members.cbegin() + i + 1, padding);
+				}
+
+				member.type_size = new_size;
+				found = true;
+			}
+
+			if (found)
+			{
+				interim.push_back(struc);
+			}
+		}
+
+		for (const _Struct& struc : interim)
+		{
+			m_structs[struc.name] = struc;
+		}
+	}
+
+	un.members.erase(itrMember);
+	un.size = new_size;
+
+	logprintf(LL::Message, "Member \"%s\" has been removed from union \"%s\"!",
+		memberName.c_str(), un.name.c_str());
+	return true;
+}
+
+
+int CStructHelper::_sizeOfType(const std::string& type) const
+{
+	auto found = m_types.find(type);
+	if (found != m_types.cend())
+		return found->second.size;
+
+	auto pos = type.find('*');
+	if (pos != std::string::npos)
+	{
+		std::string rest = trim_rightA(type.substr(pos));
+		std::string typeName = trim_rightA(type.substr(0, pos));
+
+		if (rest == "*" || rest == "**")
+		{
+			if (m_types.find(typeName) != m_types.cend() ||
+				m_structs.find(typeName) != m_structs.cend() ||
+				m_unions.find(typeName) != m_unions.cend())
+				return m_primitivesizes.at(Pointer);
+		}
+	}
+	else
+	{
+		auto itrStruct = m_structs.find(type);
+		if (itrStruct != m_structs.cend())
+			return itrStruct->second.size;
+
+		auto itrUnion = m_unions.find(type);
+		if (itrUnion != m_unions.cend())
+			return itrUnion->second.size;
+	}
+
+	return -1;
+}
+
+bool CStructHelper::_typeExists(const std::string& typeName) const
+{
+	return (m_structs.find(typeName) != m_structs.cend() ||
+		m_unions.find(typeName) != m_unions.cend() ||
+		m_types.find(typeName) != m_types.cend());
 }

@@ -1,6 +1,6 @@
 # yaraEx
 
-## Usage: yaraEx <arg1>, [arg2], [arg3]
+## Usage: `yaraEx <arg1>, [arg2], [arg3]`
 
 `<arg1>`: Rules file to apply. This should be a full path.
 
@@ -40,7 +40,7 @@ rule test {
 
 # yarafind
 
-## Usage: yarafind <arg1>, [arg2], [arg3]
+## Usage: `yarafind <arg1>, [arg2], [arg3]`
 
 `<arg1>`: The address to start searching from.
 
@@ -53,7 +53,7 @@ rule test {
 
 # yarafindall
 
-## Usage: yarafindall <arg1>, [arg2], [arg3]
+## Usage: `yarafindall <arg1>, [arg2], [arg3]`
 
 `<arg1>`: The address to start searching from.
 

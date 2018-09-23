@@ -100,6 +100,13 @@ split_stringA
 split_stringW
 split_string
 
+字符串合并
+join_stringT
+相关宏:
+join_stringA
+join_stringW
+join_string
+
 格式化文本解析工具(string+separator+string)
 namespace dsd {
 strlenT
@@ -496,25 +503,45 @@ std::basic_string<_T, std::char_traits<_T>, std::allocator<_T>>& trim_stringT(
 //字符串split分割
 
 template<typename _T>
-void split_stringT(const std::basic_string<_T>& s, std::vector<std::basic_string<_T> >& v, const std::basic_string<_T>& c)
+std::vector<std::basic_string<_T> > split_stringT(const std::basic_string<_T>& s, const std::basic_string<_T>& c)
 {
 	std::basic_string<_T>::size_type pos1, pos2;
+	std::vector<std::basic_string<_T>> result;
 	pos2 = s.find(c);
 	pos1 = 0;
 	while (std::basic_string<_T>::npos != pos2)
 	{
-		v.push_back(s.substr(pos1, pos2 - pos1));
+		result.push_back(s.substr(pos1, pos2 - pos1));
 
 		pos1 = pos2 + c.size();
 		pos2 = s.find(c, pos1);
 	}
 	if (pos1 != s.length())
-		v.push_back(s.substr(pos1));
+		result.push_back(s.substr(pos1));
+
+	return result;
 }
 
 #define split_stringA		split_stringT<char>
 #define split_stringW		split_stringT<wchar_t>
 #define split_string		split_stringT<TCHAR>
+
+
+template<typename _T>
+std::basic_string<_T> join_stringT(const std::vector<std::basic_string<_T> >& v, const std::basic_string<_T>& c)
+{
+	std::basic_string<_T> result;
+	for (const std::basic_string<_T>& s : v)
+	{
+		if (result.size()) result += c;
+		result += s;
+	}
+	return result;
+}
+
+#define join_stringA		join_stringT<char>
+#define join_stringW		join_stringT<wchar_t>
+#define join_string			join_stringT<TCHAR>
 
 
 ////////////////////////////////////////////////////////////////////////////////
