@@ -9,18 +9,18 @@ struct CmdHelp
 	const char * text;
 };
 
-static LL _log_level = LL::Debug;
+static LL _log_level = LL::Message;
 
 static const std::vector<CmdHelp> _cmd_helps =
 {
 	{
-		CMD_NAME_YARAEX_LL,
+		CMD_YARAEX_LL,
 		"Usage: %s <arg1>\n"
-		"  <arg1>: Log level for outputing message(0 - Error, 1 - Warning, 2 - Normal, 3 - Debug\n"
+		"  <arg1>: Log level for outputing message(0 - Error, 1 - Warning, 2 - Normal, 3 - Debug)\n"
 	},
 
 	{
-		CMD_NAME_YARAEX,
+		CMD_YARAEX,
 		"Usage: %s <arg1>, [arg2], [arg3]\n"
 		"  <arg1>: Rules file to apply. This should be a full path.\n"
 		"  [arg2]: Start address of the range to apply the rules to. If not specified, the disassembly selection will be used.\n"
@@ -44,7 +44,7 @@ static const std::vector<CmdHelp> _cmd_helps =
 	},
 
 	{
-		CMD_NAME_YARAFIND,
+		CMD_YARAFIND,
 		"Usage: %s <arg1>, [arg2], [arg3]\n"
 		"  <arg1>: The address to start searching from.\n"
 		"  <arg2>: The byte pattern of yara to search for.\n"
@@ -54,7 +54,7 @@ static const std::vector<CmdHelp> _cmd_helps =
 	},
 
 	{
-		CMD_NAME_YARAFINDALL,
+		CMD_YARAFINDALL,
 		"Usage: %s <arg1>, [arg2], [arg3]\n"
 		"  <arg1>: The address to start searching from.\n"
 		"  <arg2>: The byte pattern of yara to search for.\n"
@@ -103,7 +103,7 @@ static const std::vector<CmdHelp> _cmd_helps =
 		CMD_TYPE_SET_COMMENT,
 		"Usage: %s <arg1>, [arg2]\n"
 		"  <arg1>: Name of struct/union.\n"
-		"  [arg2]: Comment text. Leave it empty to clear comment.\n"
+		"  [arg2]: Comment text. Leave it empty to clear comment. '\\n' can be used for multiple lines.\n"
 	},
 
 	{
@@ -111,7 +111,7 @@ static const std::vector<CmdHelp> _cmd_helps =
 		"Usage: %s <arg1>, <arg2>, [arg3]\n"
 		"  <arg1>: Name of struct/union.\n"
 		"  <arg2>: Name of member.\n"
-		"  [arg3]: Comment text of member. Leave it empty to clear comment.\n"
+		"  [arg3]: Comment text of member. Leave it empty to clear comment.'\\n' can be used for multiple lines.\n"
 	},
 
 	{
@@ -155,6 +155,12 @@ static const std::vector<CmdHelp> _cmd_helps =
 		"Usage: %s <arg1>, <arg2>\n"
 		"  <arg1>: Name of struct to remove ancestor from.\n"
 		"  <arg2>: Name of ancestor to remove.\n"
+	},
+
+	{
+		CMD_TYPE_REFERENCE,
+		"Usage: %s <arg1>\n"
+		"  <arg1>: Name of struct/union.\n"
 	}
 };
 

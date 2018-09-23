@@ -2,7 +2,7 @@
 #include "pluginmain.h"
 #include "strutils.h"
 
-class CStructHelper
+class CTypeHelper
 {
 public:
 
@@ -130,8 +130,8 @@ public:
 	typedef std::unordered_map<std::string, _Type> TypeMap;
 
 public:
-	CStructHelper();
-	~CStructHelper();
+	CTypeHelper();
+	~CTypeHelper();
 
 
 	
@@ -148,6 +148,7 @@ public:
 	bool cmd_type_AddAncestor(int argc, char* argv[]);
 	bool cmd_type_InsertAncestor(int argc, char* argv[]);
 	bool cmd_type_RemoveAncestor(int argc, char* argv[]);
+	bool cmd_type_Reference(int argc, char* argv[]);
 	
 protected:
 	bool structAddMember(_Struct& struc, _Member& member);

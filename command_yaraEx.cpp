@@ -43,27 +43,6 @@ yaraEx::~yaraEx()
 		Script::Debug::Run();
 }
 
-//void yaraEx::logprintf(int level, const char* format, ...)
-//{
-//	if (!m_debug && m_logLevel < level)
-//		return;
-//
-//	va_list ap;
-//	va_start(ap, format);
-//	std::string msg = string_formatA("[%s] ",m_cmdname.c_str()) + string_vformatA(format, ap);
-//	va_end(ap);
-//	::logputs(msg.c_str());
-//}
-//
-//void yaraEx::logputs(int level, const char * text)
-//{
-//	if (!m_debug && m_logLevel < level)
-//		return;
-//
-//	std::string msg = string_formatA("[%s] ", m_cmdname.c_str()) + std::string(text);
-//	::logputs(msg.c_str());
-//}
-
 void yaraEx::cleanup()
 {
 	if (m_yrRules)
@@ -229,7 +208,7 @@ bool yaraEx::initYara(const std::string& content, bool isfile)
 		return false;
 	}
 
-	//yara库版本过低，不支持下面的函数
+	//Current version of yara library doesn't support this function:
 	//yr_compiler_set_include_callback()
 
 	return true;
@@ -276,8 +255,6 @@ bool yaraEx::initRules(bool scanMeta)
 	YR_RULE * yrRule;
 	m_results.clear();
 
-	
-	//yr_rules_foreach(m_yrRules, yrRule)
 	for (yrRule = m_yrRules->rules_list_head; !RULE_IS_NULL(yrRule); yrRule++)
 	{
 		if (!yrRule->identifier || !*yrRule->identifier)
@@ -287,7 +264,6 @@ bool yaraEx::initRules(bool scanMeta)
 		if (scanMeta)
 		{
 			YR_META * yrMeta;
-			//yr_rule_metas_foreach(yrRule, yrMeta)
 			for (yrMeta = yrRule->metas; !META_IS_NULL(yrMeta); yrMeta++)
 			{
 				if (yrMeta->type != META_TYPE_STRING || !yrMeta->string)
@@ -499,7 +475,7 @@ duint yaraEx::saveMatches(YR_RULE * yrRule)
 	auto itRule = m_results.find(std::string(yrRule->identifier));
 	if (itRule == m_results.end())
 	{
-		logprintf(LL::Error, "Rule \"%s\" doesn't initialized!", yrRule->identifier);
+		logprintf(LL::Error, "Rule \"%s\" hasn't been initialized!", yrRule->identifier);
 		return 0;
 	}
 
@@ -557,17 +533,9 @@ int yaraEx::scanCallback(int message, void* message_data, void* user_data)
 	break;
 
 	//case CALLBACK_MSG_SCAN_FINISHED:
-	//{
-	//	lpThis->logdebugmsg("Scan finished!");
-	//}
 	//break;
-
 	//case CALLBACK_MSG_IMPORT_MODULE:
-	//{
-	//	YR_MODULE_IMPORT* yrModuleImport = (YR_MODULE_IMPORT*)message_data;
-	//	lpThis->logdebugmsg(string_formatA("Imported module \"%s\"!", yrModuleImport->module_name));
-	//}
-	break;
+	//break;
 	}
 	
 	return CALLBACK_CONTINUE;
@@ -576,7 +544,6 @@ int yaraEx::scanCallback(int message, void* message_data, void* user_data)
 bool yaraEx::cmd_yaraEx(int argc, char *argv[])
 {
 	cleanup();
-	m_cmdname = CMD_NAME_YARAEX;
 	m_logLevel = LOG_INFO;
 
 	if (!initModule(argv[2], argc > 3 ? argv[3] : nullptr))
@@ -606,12 +573,12 @@ bool yaraEx::_yarafind(int argc, char * argv[])
 		return false;
 
 	std::string yaraRule = string_formatA(
-		"rule %s {\n"
+		"rule _yarafind {\n"
 		"	strings:\n"
 		"		$pattern = { %s }\n"
 		"	condition:\n"
 		"		all of them\n"
-		"}", m_cmdname.c_str(), argv[2]);
+		"}", argv[2]);
 
 	if (!initYara(yaraRule.c_str(), false))
 		return false;
@@ -625,25 +592,18 @@ bool yaraEx::_yarafind(int argc, char * argv[])
 
 	if (bSuccess)
 	{
-		//logputs(LOG_INFO, "Preparing gui reference view!");
-
-		auto itMatches = m_results.find(m_cmdname);
+		auto itMatches = m_results.find("_yarafind");
 		if (itMatches != m_results.end())
 		{
-			//logputs(LOG_INFO, "Found result!");
-
 			const YaraRule& rule = itMatches->second;
 			if (rule.matched)
 			{
-				//logputs(LOG_INFO, "Found match!");
 				if (rule.matches.size() != 0)
 				{
 					const std::vector<YaraMatch>& matches = rule.matches.cbegin()->second;
 					count = matches.size();
 					if (count)
 						address = (duint)matches[0].offset + m_base;
-
-					//logprintf(LOG_INFO, "match result: address = %p, count = %d", address, count);
 				}
 			}
 		}
@@ -659,14 +619,12 @@ bool yaraEx::_yarafind(int argc, char * argv[])
 bool yaraEx::cmd_yarafind(int argc, char * argv[])
 {
 	m_logLevel = LOG_ERROR;
-	m_cmdname = CMD_NAME_YARAFIND;
 	return _yarafind(argc, argv);
 }
 
 bool yaraEx::cmd_yarafindall(int argc, char *argv[])
 {
 	m_logLevel = LOG_INFO;
-	m_cmdname = CMD_NAME_YARAFINDALL;
 	bool bSuccess = _yarafind(argc, argv);
 	if (bSuccess)
 	{

@@ -82,33 +82,11 @@ extern int hMenuStack;
 #define PLUGIN_NAME "yaraEx"
 #define PLUGIN_VERSION 1
 
-#define CMD_NAME_YARAEX_LL					"yaraEx.SetLogLevel,yaraEx.ll"
-#define CMD_NAME_YARAEX						"yaraEx"
-#define CMD_NAME_YARAFIND					"yarafind"
-#define CMD_NAME_YARAFINDALL				"yarafindall"
+#define CMD_YARAEX_LL						"yaraEx.SetLogLevel,yaraEx.ll"
+#define CMD_YARAEX							"yaraEx"
+#define CMD_YARAFIND						"yarafind"
+#define CMD_YARAFINDALL						"yarafindall"
 
-//#define CMD_NAME_STRUCT_ADD					"struct.add"
-//#define CMD_NAME_STRUCT_REMOVE				"struct.remove"
-//#define CMD_NAME_STRUCT_ADD_ANCESTOR		"struct.addAncestor"
-//#define CMD_NAME_STRUCT_INSERT_ANCESTOR		"struct.insertAncestor"
-//#define CMD_NAME_STRUCT_REMOVE_ANCESTOR		"struct.removeAncestor"
-//#define CMD_NAME_STRUCT_ADD_MEMBER			"struct.addMember"
-//#define CMD_NAME_STRUCT_REMOVE_MEMBER		"struct.removeMember"
-//#define CMD_NAME_STRUCT_SET_MEMBER_COMMENT	"struct.setMemberComment"
-//#define CMD_NAME_STRUCT_SET_COMMENT			"struct.setComment"
-//#define CMD_NAME_STRUCT_PRINT				"struct.print"
-//#define CMD_NAME_STRUCT_REMOVE_ALL			"struct.removeAll"
-//#define CMD_NAME_STRUCT_SIZEOFTYPE			"struct.sizeOfType"
-//
-//#define CMD_NAME_UNION_ADD					"union.add"
-//#define CMD_NAME_UNION_REMOVE				"union.remove"
-//#define CMD_NAME_UNION_ADD_MEMBER			"union.addMember"
-//#define CMD_NAME_UNION_REMOVE_MEMBER		"union.removeMember"
-//#define CMD_NAME_UNION_SET_COMMENT			"union.setComment"
-//#define CMD_NAME_UNION_SET_MEMBER_COMMENT	"union.setMemberComment"
-//#define CMD_NAME_UNION_PRINT				"union.print"
-
-////////////////////////////////////////////////
 #define CMD_TYPE_STRUCT_ADD					"Type.AddStruct,Type.as"
 #define CMD_TYPE_UNION_ADD					"Type.AddUnion,Type.au"
 #define CMD_TYPE_REMOVE						"Type.Remove"
@@ -119,12 +97,13 @@ extern int hMenuStack;
 #define CMD_TYPE_PRINT						"Type.print"
 #define CMD_TYPE_REMOVE_ALL					"Type.removeAll"
 #define CMD_TYPE_SIZE						"Type.size"
+#define CMD_TYPE_REFERENCE					"Type.reference,Type.ref"
 
 //This three commands are for structures only.
 #define CMD_TYPE_ADD_ANCESTOR				"Type.addAncestor,Type.aanc"
 #define CMD_TYPE_INSERT_ANCESTOR			"Type.insertAncestor,Type.ianc"
 #define CMD_TYPE_REMOVE_ANCESTOR			"Type.removeAncestor,Type.ranc"
 
-////////////////////////////////////////////////
+
 
 

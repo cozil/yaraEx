@@ -31,7 +31,7 @@ void str_replace(std::string& str, const std::string& find, const char * replace
 	}
 }
 
-CStructHelper::CStructHelper()
+CTypeHelper::CTypeHelper()
 {
 	auto p = [this](const std::string & n, Primitive p, int size)
 	{
@@ -64,13 +64,13 @@ CStructHelper::CStructHelper()
 }
 
 
-CStructHelper::~CStructHelper()
+CTypeHelper::~CTypeHelper()
 {
 }
 
 
 
-bool CStructHelper::cmd_type_AddStruct(int argc, char* argv[])
+bool CTypeHelper::cmd_type_AddStruct(int argc, char* argv[])
 {
 	_Struct struc;
 	struc.name = argv[1];
@@ -87,7 +87,7 @@ bool CStructHelper::cmd_type_AddStruct(int argc, char* argv[])
 	return true;
 }
 
-bool CStructHelper::cmd_type_AddUnion(int argc, char* argv[])
+bool CTypeHelper::cmd_type_AddUnion(int argc, char* argv[])
 {
 	_Union u;
 	u.name = argv[1];
@@ -104,7 +104,7 @@ bool CStructHelper::cmd_type_AddUnion(int argc, char* argv[])
 	return true;
 }
 
-bool CStructHelper::cmd_type_Remove(int argc, char* argv[])
+bool CTypeHelper::cmd_type_Remove(int argc, char* argv[])
 {
 	std::string typeName = argv[1];
 	auto itrStruct = m_structs.find(typeName);
@@ -119,7 +119,7 @@ bool CStructHelper::cmd_type_Remove(int argc, char* argv[])
 	return false;
 }
 
-bool CStructHelper::cmd_type_AddMember(int argc, char* argv[])
+bool CTypeHelper::cmd_type_AddMember(int argc, char* argv[])
 {
 	_Member member;
 	std::string typeName = argv[1];
@@ -160,7 +160,7 @@ bool CStructHelper::cmd_type_AddMember(int argc, char* argv[])
 	return false;
 }
 
-bool CStructHelper::cmd_type_RemoveMember(int argc, char* argv[])
+bool CTypeHelper::cmd_type_RemoveMember(int argc, char* argv[])
 {
 	std::string typeName = argv[1];
 	std::string memberName = argv[2];
@@ -177,7 +177,7 @@ bool CStructHelper::cmd_type_RemoveMember(int argc, char* argv[])
 	return false;
 }
 
-bool CStructHelper::cmd_type_SetComment(int argc, char* argv[])
+bool CTypeHelper::cmd_type_SetComment(int argc, char* argv[])
 {
 	std::string typeName = argv[1];
 	std::string comment;
@@ -202,7 +202,7 @@ bool CStructHelper::cmd_type_SetComment(int argc, char* argv[])
 	return false;
 }
 
-bool CStructHelper::cmd_type_SetMemberComment(int argc, char* argv[])
+bool CTypeHelper::cmd_type_SetMemberComment(int argc, char* argv[])
 {
 	std::string typeName = argv[1];
 	std::string memberName = argv[2];
@@ -250,7 +250,7 @@ bool CStructHelper::cmd_type_SetMemberComment(int argc, char* argv[])
 	return false;
 }
 
-bool CStructHelper::cmd_type_Print(int argc, char* argv[])
+bool CTypeHelper::cmd_type_Print(int argc, char* argv[])
 {
 	std::string typeName = argv[1];
 	int offsetLen = -1, typeLen = 0, memberLen = 0;
@@ -280,7 +280,7 @@ bool CStructHelper::cmd_type_Print(int argc, char* argv[])
 	return false;
 }
 
-bool CStructHelper::cmd_type_RemoveAll(int argc, char* argv[])
+bool CTypeHelper::cmd_type_RemoveAll(int argc, char* argv[])
 {
 	size_t count = m_structs.size();
 	m_structs.clear();
@@ -293,14 +293,14 @@ bool CStructHelper::cmd_type_RemoveAll(int argc, char* argv[])
 	return true;
 }
 
-bool CStructHelper::cmd_type_Size(int argc, char* argv[])
+bool CTypeHelper::cmd_type_Size(int argc, char* argv[])
 {
 	int size = _sizeOfType(argv[1]);
 	logprintf(LL::Message, "sizeof(%s) = 0x%x (.%d)", argv[1], size, size);
 	return DbgScriptCmdExec(string_formatA("$RESULT=0x%x", size).c_str());
 }
 
-bool CStructHelper::cmd_type_AddAncestor(int argc, char* argv[])
+bool CTypeHelper::cmd_type_AddAncestor(int argc, char* argv[])
 {
 	std::string typeName = argv[1];
 	std::string ancName = argv[2];
@@ -309,7 +309,7 @@ bool CStructHelper::cmd_type_AddAncestor(int argc, char* argv[])
 	return structInsertAncestor(typeName, ancName, beforeAnc);
 }
 
-bool CStructHelper::cmd_type_InsertAncestor(int argc, char* argv[])
+bool CTypeHelper::cmd_type_InsertAncestor(int argc, char* argv[])
 {
 	std::string typeName = argv[1];
 	std::string ancName = argv[2];
@@ -320,14 +320,55 @@ bool CStructHelper::cmd_type_InsertAncestor(int argc, char* argv[])
 	return structInsertAncestor(typeName, ancName, beforeAnc);
 }
 
-bool CStructHelper::cmd_type_RemoveAncestor(int argc, char* argv[])
+bool CTypeHelper::cmd_type_RemoveAncestor(int argc, char* argv[])
 {
 	std::string typeName = argv[1];
 	std::string ancName = argv[2];
 	return structRemoveAncestor(typeName, ancName);
 }
 
-bool CStructHelper::structRemove(StructMap::const_iterator itrStruct)
+bool CTypeHelper::cmd_type_Reference(int argc, char* argv[])
+{
+	std::string typeName = argv[1];
+	int count = 0;
+
+	for (const auto& v : m_structs)
+	{
+		if (v.second.ancestors.cend() != std::find_if(v.second.ancestors.cbegin(),
+			v.second.ancestors.cend(), [&typeName](const _Ancestor& anc)
+		{ return !compare_stringA(typeName, anc.struct_name, true); }))
+		{
+			++count;
+			logprintf(LL::Message, "Ancestor of struct \"%s\"", v.first.c_str());
+		}
+
+		for (const auto& member : v.second.members)
+		{
+			if (!compare_stringA(member.type, typeName, true))
+			{
+				++count;
+				logprintf(LL::Message, "%s => %s", v.first.c_str(), member.name.c_str());
+			}
+		}
+	}
+
+	for (const auto& v : m_unions)
+	{
+		for (const auto& member : v.second.members)
+		{
+			if (!compare_stringA(member.type, typeName, true))
+			{
+				++count;
+				logprintf(LL::Message, "%s => %s", v.first.c_str(), member.name.c_str());
+			}
+		}
+	}
+
+	logprintf(LL::Message, "%d references found!", count);
+	return true;
+}
+
+bool CTypeHelper::structRemove(StructMap::const_iterator itrStruct)
 {
 	const std::string& structName = itrStruct->second.name;
 	std::vector<_Struct> interim;
@@ -380,7 +421,7 @@ bool CStructHelper::structRemove(StructMap::const_iterator itrStruct)
 }
 
 
-bool CStructHelper::structInsertAncestor(const std::string& typeName, const std::string& ancName, const std::string& beforeAnc)
+bool CTypeHelper::structInsertAncestor(const std::string& typeName, const std::string& ancName, const std::string& beforeAnc)
 {
 	auto itrStruct = m_structs.find(typeName);
 	if (itrStruct == m_structs.end())
@@ -464,7 +505,7 @@ bool CStructHelper::structInsertAncestor(const std::string& typeName, const std:
 
 }
 
-bool CStructHelper::structRemoveAncestor(const std::string& typeName, const std::string& ancName)
+bool CTypeHelper::structRemoveAncestor(const std::string& typeName, const std::string& ancName)
 {
 	auto itrStruct = m_structs.find(typeName);
 	if (itrStruct == m_structs.end())
@@ -492,7 +533,7 @@ bool CStructHelper::structRemoveAncestor(const std::string& typeName, const std:
 	return true;
 }
 
-bool CStructHelper::structAddMember(_Struct& struc, _Member& member)
+bool CTypeHelper::structAddMember(_Struct& struc, _Member& member)
 {
 	if (struc.members.cend() != std::find_if(struc.members.cbegin(), struc.members.cend(),
 		[&member](const _Member& _member)
@@ -514,7 +555,6 @@ bool CStructHelper::structAddMember(_Struct& struc, _Member& member)
 			return false;
 
 		member.offset = struc.size;
-		struc.size = member.get_next_offset();
 		struc.members.push_back(member);
 	}
 	else
@@ -623,18 +663,18 @@ bool CStructHelper::structAddMember(_Struct& struc, _Member& member)
 				_Member& last = struc.members[struc.members.size() - 1];
 				last.set_padding(last.offset, member.offset - last.offset);
 			}
-
-			struc.size = member.get_next_offset();
 			struc.members.push_back(member);
 		}
 	}
+
+	struc.size = struc.members[struc.members.size() - 1].get_next_offset();
 
 	logprintf(LL::Message, "Member \"%s\" successfully added. Offset:%p!",
 		member.name.c_str(), member.offset);
 	return true;
 }
 
-bool CStructHelper::structRemoveMember(_Struct& struc, const std::string& memberName)
+bool CTypeHelper::structRemoveMember(_Struct& struc, const std::string& memberName)
 {
 	auto itrMember = std::find_if(struc.members.cbegin(), struc.members.cend(),
 		[&memberName](const _Member& member)
@@ -656,7 +696,7 @@ bool CStructHelper::structRemoveMember(_Struct& struc, const std::string& member
 	return true;
 }
 
-void CStructHelper::structPrint(const _Struct& struc, int offsetLen, int typeLen, int memberLen)
+void CTypeHelper::structPrint(const _Struct& struc, int offsetLen, int typeLen, int memberLen)
 {
 	std::string result, str;
 	result.reserve(1024);
@@ -760,7 +800,7 @@ void CStructHelper::structPrint(const _Struct& struc, int offsetLen, int typeLen
 }
 
 
-void CStructHelper::unionPrint(const _Union& un, int offsetLen, int typeLen, int memberLen)
+void CTypeHelper::unionPrint(const _Union& un, int offsetLen, int typeLen, int memberLen)
 {
 	std::string result, str;
 	result.reserve(1024);
@@ -796,19 +836,19 @@ void CStructHelper::unionPrint(const _Union& un, int offsetLen, int typeLen, int
 			offsetLen = -1;
 
 		//Formatting offset text
-		if (offsetLen < 0)
-		{
-			result += string_formatA("/*%p*/    ", member.offset);
-		}
-		else if (offsetLen > 0)
-		{
-			result += string_formatA(string_formatA("/*%%0%dx*/    ", offsetLen).c_str(),
-				member.offset);
-		}
-		else
-		{
-			result += "    ";
-		}
+		//if (offsetLen < 0)
+		//{
+		//	result += string_formatA("/*%p*/    ", member.offset);
+		//}
+		//else if (offsetLen > 0)
+		//{
+		//	result += string_formatA(string_formatA("/*%%0%dx*/    ", offsetLen).c_str(),
+		//		member.offset);
+		//}
+		//else
+		//{
+		result += "    ";
+		//}
 
 		//Formatting type name text
 		str = member.type;
@@ -840,9 +880,9 @@ void CStructHelper::unionPrint(const _Union& un, int offsetLen, int typeLen, int
 	_plugin_logputs(result.c_str());
 }
 
-bool CStructHelper::unionRemove(UnionMap::const_iterator itrUnion)
+bool CTypeHelper::unionRemove(UnionMap::const_iterator itrUnion)
 {
-	const std::string& unionName = itrUnion->second.name;
+	const std::string unionName = itrUnion->second.name;
 	std::vector<_Struct> interim;
 	for (auto& pair : m_structs)
 	{
@@ -851,7 +891,7 @@ bool CStructHelper::unionRemove(UnionMap::const_iterator itrUnion)
 		for (size_t i = 0; i < struc.members.size(); ++i)
 		{
 			_Member& member = struc.members[i];
-			if (compare_stringA(member.name, unionName, true))
+			if (compare_stringA(member.type, unionName, true))
 				continue;
 
 			if (!_structRemoveMember(struc, i))
@@ -879,7 +919,7 @@ bool CStructHelper::unionRemove(UnionMap::const_iterator itrUnion)
 	return false;
 }
 
-bool CStructHelper::unionAddMember(_Union& un, _Member& member)
+bool CTypeHelper::unionAddMember(_Union& un, _Member& member)
 {
 	if (un.members.cend() != std::find_if(un.members.cbegin(), un.members.cend(), [&member](const _Member& _member)
 	{ return !compare_stringA(member.name, _member.name, true); }))
@@ -958,7 +998,7 @@ bool CStructHelper::unionAddMember(_Union& un, _Member& member)
 	return true;
 }
 
-bool CStructHelper::_beforeExpandStruct(const std::string& changedStruct, int expand_size)
+bool CTypeHelper::_beforeExpandStruct(const std::string& changedStruct, int expand_size)
 {
 	//Maintain a vector to keep modified structs.
 	//Save them to m_structs after all relevant structs have been successfully modified.
@@ -1049,7 +1089,7 @@ bool CStructHelper::_beforeExpandStruct(const std::string& changedStruct, int ex
 	return true;
 }
 
-bool CStructHelper::_structRemoveAncestor(_Struct& struc, std::vector<_Ancestor>::const_iterator itrAncestor)
+bool CTypeHelper::_structRemoveAncestor(_Struct& struc, std::vector<_Ancestor>::const_iterator itrAncestor)
 {
 	auto& ancestorStruct = m_structs.find(itrAncestor->struct_name);
 	if (ancestorStruct == m_structs.end())
@@ -1080,7 +1120,7 @@ bool CStructHelper::_structRemoveAncestor(_Struct& struc, std::vector<_Ancestor>
 	return true;
 }
 
-bool CStructHelper::_isTypeUsed(const std::string& typeName) const
+bool CTypeHelper::_isTypeUsed(const std::string& typeName) const
 {
 	for (auto& pair : m_structs)
 	{
@@ -1118,7 +1158,7 @@ bool CStructHelper::_isTypeUsed(const std::string& typeName) const
 	return false;
 }
 
-bool CStructHelper::_structRemoveMember(_Struct& struc, size_t& memberId)
+bool CTypeHelper::_structRemoveMember(_Struct& struc, size_t& memberId)
 {
 	if (memberId >= struc.members.size())
 	{
@@ -1163,7 +1203,7 @@ bool CStructHelper::_structRemoveMember(_Struct& struc, size_t& memberId)
 }
 
 
-bool CStructHelper::unionRemoveMember(_Union& un, const std::string& memberName)
+bool CTypeHelper::unionRemoveMember(_Union& un, const std::string& memberName)
 {
 	auto itrMember = std::find_if(un.members.begin(), un.members.end(),
 		[&memberName](_Member& member)
@@ -1245,7 +1285,7 @@ bool CStructHelper::unionRemoveMember(_Union& un, const std::string& memberName)
 }
 
 
-int CStructHelper::_sizeOfType(const std::string& type) const
+int CTypeHelper::_sizeOfType(const std::string& type) const
 {
 	auto found = m_types.find(type);
 	if (found != m_types.cend())
@@ -1279,7 +1319,7 @@ int CStructHelper::_sizeOfType(const std::string& type) const
 	return -1;
 }
 
-bool CStructHelper::_typeExists(const std::string& typeName) const
+bool CTypeHelper::_typeExists(const std::string& typeName) const
 {
 	return (m_structs.find(typeName) != m_structs.cend() ||
 		m_unions.find(typeName) != m_unions.cend() ||

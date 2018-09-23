@@ -5,7 +5,7 @@
 #include "command_yaraEx.h"
 #include "command_struct.h"
 
-static CStructHelper _structHelper;
+static CTypeHelper _typeHelper;
 static yaraEx _yaraInst;
 
 static int print_exception(EXCEPTION_POINTERS * _excpt)
@@ -79,7 +79,7 @@ bool _plugin_registercommand_ex(int pluginHandle, const char* command, CBPLUGINC
 
 bool pluginInit(PLUG_INITSTRUCT* initStruct)
 {
-	_plugin_registercommand_ex(pluginHandle, CMD_NAME_YARAEX_LL, [](int argc, char* argv[]) -> bool
+	_plugin_registercommand_ex(pluginHandle, CMD_YARAEX_LL, [](int argc, char* argv[]) -> bool
 	{
 		if (argc <= 1)
 		{
@@ -102,17 +102,17 @@ bool pluginInit(PLUG_INITSTRUCT* initStruct)
 	}, false);
 
 	//yara commands
-	_plugin_registercommand_ex(pluginHandle, CMD_NAME_YARAEX, [](int argc, char* argv[]) -> bool
+	_plugin_registercommand_ex(pluginHandle, CMD_YARAEX, [](int argc, char* argv[]) -> bool
 	{		
 		TRY_CALL(_yaraInst.cmd_yaraEx, 1);
 	}, true);
 
-	_plugin_registercommand_ex(pluginHandle, CMD_NAME_YARAFIND, [](int argc, char* argv[]) -> bool
+	_plugin_registercommand_ex(pluginHandle, CMD_YARAFIND, [](int argc, char* argv[]) -> bool
 	{
 		TRY_CALL(_yaraInst.cmd_yarafind, 2);
 	}, true);
 
-	_plugin_registercommand_ex(pluginHandle, CMD_NAME_YARAFINDALL, [](int argc, char* argv[]) -> bool
+	_plugin_registercommand_ex(pluginHandle, CMD_YARAFINDALL, [](int argc, char* argv[]) -> bool
 	{
 		TRY_CALL(_yaraInst.cmd_yarafindall, 2);
 	}, true);
@@ -121,67 +121,72 @@ bool pluginInit(PLUG_INITSTRUCT* initStruct)
 	//type commands
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_STRUCT_ADD, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_structHelper.cmd_type_AddStruct, 1);
+		TRY_CALL(_typeHelper.cmd_type_AddStruct, 1);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_UNION_ADD, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_structHelper.cmd_type_AddUnion, 1);
+		TRY_CALL(_typeHelper.cmd_type_AddUnion, 1);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_REMOVE, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_structHelper.cmd_type_Remove, 1);
+		TRY_CALL(_typeHelper.cmd_type_Remove, 1);
 	}, false);
 	
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_ADD_MEMBER, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_structHelper.cmd_type_AddMember, 3);
+		TRY_CALL(_typeHelper.cmd_type_AddMember, 3);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_REMOVE_MEMBER, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_structHelper.cmd_type_RemoveMember, 2);
+		TRY_CALL(_typeHelper.cmd_type_RemoveMember, 2);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_SET_COMMENT, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_structHelper.cmd_type_SetComment, 1);
+		TRY_CALL(_typeHelper.cmd_type_SetComment, 1);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_SET_MEMBER_COMMENT, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_structHelper.cmd_type_SetMemberComment, 2);
+		TRY_CALL(_typeHelper.cmd_type_SetMemberComment, 2);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_REMOVE_ALL, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_structHelper.cmd_type_RemoveAll, 0);
+		TRY_CALL(_typeHelper.cmd_type_RemoveAll, 0);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_SIZE, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_structHelper.cmd_type_Size, 1);
+		TRY_CALL(_typeHelper.cmd_type_Size, 1);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_PRINT, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_structHelper.cmd_type_Print, 1);
+		TRY_CALL(_typeHelper.cmd_type_Print, 1);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_ADD_ANCESTOR, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_structHelper.cmd_type_AddAncestor, 2);
+		TRY_CALL(_typeHelper.cmd_type_AddAncestor, 2);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_INSERT_ANCESTOR, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_structHelper.cmd_type_InsertAncestor, 2);
+		TRY_CALL(_typeHelper.cmd_type_InsertAncestor, 2);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_REMOVE_ANCESTOR, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_structHelper.cmd_type_RemoveAncestor, 2);
+		TRY_CALL(_typeHelper.cmd_type_RemoveAncestor, 2);
+	}, false);
+
+	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_REFERENCE, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_typeHelper.cmd_type_Reference, 1);
 	}, false);
 
     return true; //Return false to cancel loading the plugin.

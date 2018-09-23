@@ -79,10 +79,6 @@ public:
 	yaraEx();
 	~yaraEx();
 
-	//void logprintf(int level, const char* format, ...);
-	//void logputs(int level, const char * text);
-	//void logdebugmsg(const std::string& text);
-
 	//yaraEx
 	bool cmd_yaraEx(int argc, char* argv[]);
 
@@ -109,7 +105,6 @@ private:
 	bool _yarafind(int argc, char * argv[]);
 
 private:
-	std::string m_cmdname;
 	int m_logLevel;
 	bool m_dbgPuased;
 
