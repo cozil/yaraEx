@@ -176,6 +176,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="command_array.cpp" />
     <ClCompile Include="command_struct.cpp" />
     <ClCompile Include="command_yaraEx.cpp" />
     <ClCompile Include="FileHelper.cpp" />
@@ -185,6 +186,7 @@
     <ClCompile Include="strutils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="command_array.h" />
     <ClInclude Include="command_struct.h" />
     <ClInclude Include="command_yaraEx.h" />
     <ClInclude Include="FileHelper.h" />

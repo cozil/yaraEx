@@ -26,6 +26,8 @@ static const std::vector<CmdHelp> _cmd_helps =
 		"  [arg2]: Start address of the range to apply the rules to. If not specified, the disassembly selection will be used.\n"
 		"  [arg3]: Size of the range to apply the rules to. When not specified, the whole page will be used.\n\n"
 		"Remarks:\n"
+		"  All results will be put into arrays using string identifier as name defined in \"strings\" section.\n"
+		"  You can use it by \"Array.xxx\" command sets.\n"
 		"  To run a single command, define it in metadata section whose identifer must be \"script\".\n"
 		"  To run script file, define it in metadata section whose identifer must be \"load\".\n"
 		"  Support multiple \"script\" or \"load\" definitions. Running sequences rely on their defined orders.\n"
@@ -104,6 +106,7 @@ static const std::vector<CmdHelp> _cmd_helps =
 		"Usage: %s <arg1>, [arg2]\n"
 		"  <arg1>: Name of struct/union.\n"
 		"  [arg2]: Comment text. Leave it empty to clear comment. '\\n' can be used for multiple lines.\n"
+		"  Comment text support string formatting. You can use '{...}' to format a value.\n"
 	},
 
 	{
@@ -112,6 +115,7 @@ static const std::vector<CmdHelp> _cmd_helps =
 		"  <arg1>: Name of struct/union.\n"
 		"  <arg2>: Name of member.\n"
 		"  [arg3]: Comment text of member. Leave it empty to clear comment.'\\n' can be used for multiple lines.\n"
+		"  Comment text support string formatting. You can use '{...}' to format a value.\n"
 	},
 
 	{
@@ -133,6 +137,7 @@ static const std::vector<CmdHelp> _cmd_helps =
 		CMD_TYPE_SIZE,
 		"Usage: %s <arg1>\n"
 		"  <arg1>: Name of primitive type or struct/union type\n"
+		"  Result value will be stored in $RESULT variable.\n"
 	},
 
 	{
@@ -178,6 +183,42 @@ static const std::vector<CmdHelp> _cmd_helps =
 		"  <arg1>: Name of struct.\n"
 		"  <arg2>: Keyword to search in declaration text.\n"
 	},
+
+	{
+		CMD_TYPE_OFFSET,
+		"Usage: %s <arg1>, <arg2>\n"
+		"  <arg1>: Name of struct.\n"
+		"  <arg2>: Name of member.\n"
+		"  Result value will be stored in $RESULT variable.\n"
+	},
+
+	{ 
+		CMD_ARRAY_SET,
+		"Usage: %s <arg1>, <arg2>, <arg3>\n"
+		"  <arg1>: Name of array.\n"
+		"  <arg2>: Index of array value. Only integer value is accepted.\n"
+		"  <arg3>: Value of array to set. Only integer value is accepted.\n"
+	},
+
+	{
+		CMD_ARRAY_GET,
+		"Usage: %s <arg1>, [arg2]\n"
+		"  <arg1>: Name of array.\n"
+		"  [arg2]: Index of array value to get. Only integer value is accepted.\n"
+		"  If [arg2] is supplied, the result value will be saved into $RESULT variable.\n"
+	},
+
+	{
+		CMD_ARRAY_REMOVE,
+		"Usage: %s <arg1>\n"
+		"  <arg1>: Name of array to remove.\n"
+	},
+
+	{
+		CMD_ARRAY_REMOVEALL,
+		"Usage: %s\n"
+		"  There is no argument for this command.\n"
+	}
 };
 
 void print_usages(const char * cmdname)
@@ -207,6 +248,11 @@ void set_log_level(LL level)
 	_log_level = level;
 }
 
+int get_log_level()
+{
+	return (int)_log_level;
+}
+
 void logprintf(LL level, const char * format, ...)
 {
 	if (level <= _log_level)
@@ -225,5 +271,53 @@ void logputs(LL level, const char * text)
 	{
 		std::string msg = string_formatA("[" PLUGIN_NAME "] %s\n", text);
 		_plugin_logputs(msg.c_str());
+	}
+}
+
+
+bool eval(const char * expression, int& result)
+{
+	bool success;
+	result = (int)DbgEval(expression, &success);
+	if (!success)
+		logprintf(LL::Error, "Invalid expression: \"%s\"", expression);
+	return success;
+};
+
+std::string eval_format(const char * text)
+{
+	const DBGFUNCTIONS * _dbg_functions = DbgFunctions();
+	char result[10240];
+	if (_dbg_functions->StringFormatInline(text, _countof(result), result))
+		return std::string(result);
+
+	return std::string(text);
+}
+
+bool eval(const char * expression, duint& result)
+{
+	bool success;
+	result = DbgEval(expression, &success);
+	if (!success)
+		logprintf(LL::Error, "Invalid expression: \"%s\"", expression);
+	return success;
+};
+
+//Fill 'text' with space char at right side til the 'text' length equals 'maxlength'
+void str_fill(std::string& text, int maxlength, char ch)
+{
+	int fillCount = maxlength - (int)text.size();
+	if (fillCount > 0)
+		text.append((size_t)fillCount, ' ');
+}
+
+//Replace 'find' to 'replaceby' in 'str'
+void str_replace(std::string& str, const std::string& find, const char * replacedby)
+{
+	auto pos = str.find(find.c_str());
+	while (pos != std::string::npos)
+	{
+		str.replace(pos, find.length(), replacedby);
+		pos = str.find(find.c_str());
 	}
 }

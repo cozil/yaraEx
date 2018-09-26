@@ -308,6 +308,9 @@
     <ClInclude Include="command_struct.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="command_array.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="pluginsdk\x32bridge.lib">
@@ -391,6 +394,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="command_struct.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="command_array.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

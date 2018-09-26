@@ -82,10 +82,18 @@ extern int hMenuStack;
 #define PLUGIN_NAME "yaraEx"
 #define PLUGIN_VERSION 1
 
+//
+//yara commands
+//
+
 #define CMD_YARAEX_LL						"yaraEx.SetLogLevel,yaraEx.ll"
 #define CMD_YARAEX							"yaraEx"
 #define CMD_YARAFIND						"yarafind"
 #define CMD_YARAFINDALL						"yarafindall"
+
+//
+//type commands
+//
 
 #define CMD_TYPE_STRUCT_ADD					"Type.addStruct,Type.as"
 #define CMD_TYPE_UNION_ADD					"Type.addUnion,Type.au"
@@ -98,6 +106,7 @@ extern int hMenuStack;
 #define CMD_TYPE_REMOVE_ALL					"Type.removeAll"
 #define CMD_TYPE_SIZE						"Type.size"
 #define CMD_TYPE_REFERENCE					"Type.reference,Type.ref"
+#define CMD_TYPE_OFFSET						"Type.offset"
 
 //This three commands are for structures only.
 #define CMD_TYPE_ADD_ANCESTOR				"Type.addAncestor,Type.aanc"
@@ -105,6 +114,17 @@ extern int hMenuStack;
 #define CMD_TYPE_REMOVE_ANCESTOR			"Type.removeAncestor,Type.ranc"
 #define CMD_TYPE_ADD_DECLARATION			"Type.addDeclaration,Type.ad"
 #define CMD_TYPE_REMOVE_DECLARATION			"Type.removeDeclaration,Type.rd"
+
+//
+//array commands
+//
+
+#define CMD_ARRAY_SET						"Array.set"
+#define CMD_ARRAY_GET						"Array.get"
+#define CMD_ARRAY_REMOVE					"Array.remove"
+#define CMD_ARRAY_REMOVEALL					"Array.removeAll"
+
+
 
 
 

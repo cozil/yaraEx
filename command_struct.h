@@ -166,22 +166,23 @@ public:
 	CTypeHelper();
 	~CTypeHelper();
 	
-	bool cmd_type_AddStruct(int argc, char* argv[]);
-	bool cmd_type_AddUnion(int argc, char* argv[]);
-	bool cmd_type_Remove(int argc, char* argv[]);
-	bool cmd_type_AddMember(int argc, char* argv[]);
-	bool cmd_type_RemoveMember(int argc, char* argv[]);
-	bool cmd_type_SetComment(int argc, char* argv[]);
-	bool cmd_type_SetMemberComment(int argc, char* argv[]);
-	bool cmd_type_Print(int argc, char* argv[]);
-	bool cmd_type_RemoveAll(int argc, char* argv[]);
-	bool cmd_type_Size(int argc, char* argv[]);
-	bool cmd_type_AddAncestor(int argc, char* argv[]);
-	bool cmd_type_InsertAncestor(int argc, char* argv[]);
-	bool cmd_type_RemoveAncestor(int argc, char* argv[]);
-	bool cmd_type_Reference(int argc, char* argv[]);
-	bool cmd_type_AddDeclaration(int argc, char* argv[]);
+	bool cmd_type_addStruct(int argc, char* argv[]);
+	bool cmd_type_addUnion(int argc, char* argv[]);
+	bool cmd_type_remove(int argc, char* argv[]);
+	bool cmd_type_addMember(int argc, char* argv[]);
+	bool cmd_type_removeMember(int argc, char* argv[]);
+	bool cmd_type_setComment(int argc, char* argv[]);
+	bool cmd_type_setMemberComment(int argc, char* argv[]);
+	bool cmd_type_print(int argc, char* argv[]);
+	bool cmd_type_removeAll(int argc, char* argv[]);
+	bool cmd_type_size(int argc, char* argv[]);
+	bool cmd_type_addAncestor(int argc, char* argv[]);
+	bool cmd_type_insertAncestor(int argc, char* argv[]);
+	bool cmd_type_removeAncestor(int argc, char* argv[]);
+	bool cmd_type_reference(int argc, char* argv[]);
+	bool cmd_type_addDeclaration(int argc, char* argv[]);
 	bool cmd_type_removeDeclaration(int argc, char* argv[]);
+	bool cmd_type_offset(int argc, char* argv[]);
 	
 protected:
 	bool structAddMember(_Struct& struc, _Member& member);

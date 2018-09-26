@@ -4,9 +4,11 @@
 #include "misc.h"
 #include "command_yaraEx.h"
 #include "command_struct.h"
+#include "command_array.h"
 
-static CTypeHelper _typeHelper;
 static yaraEx _yaraInst;
+static CTypeHelper _typeHelper;
+static CArrayHelper _arrayHelper;
 
 static int print_exception(EXCEPTION_POINTERS * _excpt)
 {
@@ -81,15 +83,19 @@ bool pluginInit(PLUG_INITSTRUCT* initStruct)
 {
 	_plugin_registercommand_ex(pluginHandle, CMD_YARAEX_LL, [](int argc, char* argv[]) -> bool
 	{
+		const char * lltexts[] =
+		{ "Error", "Warning", "Message", "Debug" };
+
 		if (argc <= 1)
 		{
-			logputs(LL::Error, "Not enough arguments!");
+			int l = get_log_level();
+			if (l < _countof(lltexts))
+				logprintf(LL::Error, "Current log level is \"%s\"", lltexts[l]);
 			print_usages(argv[0]);
 			return false;
 		}
 
-		const char * lltexts[] =
-		{ "Error", "Warning", "Normal", "Debug" };
+
 
 		int l = atoi(argv[1]);
 		if (l < 0) l = 0;
@@ -121,83 +127,110 @@ bool pluginInit(PLUG_INITSTRUCT* initStruct)
 	//type commands
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_STRUCT_ADD, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_typeHelper.cmd_type_AddStruct, 1);
+		TRY_CALL(_typeHelper.cmd_type_addStruct, 1);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_UNION_ADD, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_typeHelper.cmd_type_AddUnion, 1);
+		TRY_CALL(_typeHelper.cmd_type_addUnion, 1);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_REMOVE, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_typeHelper.cmd_type_Remove, 1);
+		TRY_CALL(_typeHelper.cmd_type_remove, 1);
 	}, false);
 	
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_ADD_MEMBER, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_typeHelper.cmd_type_AddMember, 3);
+		TRY_CALL(_typeHelper.cmd_type_addMember, 3);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_REMOVE_MEMBER, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_typeHelper.cmd_type_RemoveMember, 2);
+		TRY_CALL(_typeHelper.cmd_type_removeMember, 2);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_SET_COMMENT, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_typeHelper.cmd_type_SetComment, 1);
+		TRY_CALL(_typeHelper.cmd_type_setComment, 1);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_SET_MEMBER_COMMENT, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_typeHelper.cmd_type_SetMemberComment, 2);
+		TRY_CALL(_typeHelper.cmd_type_setMemberComment, 2);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_REMOVE_ALL, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_typeHelper.cmd_type_RemoveAll, 0);
+		TRY_CALL(_typeHelper.cmd_type_removeAll, 0);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_SIZE, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_typeHelper.cmd_type_Size, 1);
+		TRY_CALL(_typeHelper.cmd_type_size, 1);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_PRINT, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_typeHelper.cmd_type_Print, 1);
+		TRY_CALL(_typeHelper.cmd_type_print, 1);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_ADD_ANCESTOR, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_typeHelper.cmd_type_AddAncestor, 2);
+		TRY_CALL(_typeHelper.cmd_type_addAncestor, 2);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_INSERT_ANCESTOR, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_typeHelper.cmd_type_InsertAncestor, 2);
+		TRY_CALL(_typeHelper.cmd_type_insertAncestor, 2);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_REMOVE_ANCESTOR, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_typeHelper.cmd_type_RemoveAncestor, 2);
+		TRY_CALL(_typeHelper.cmd_type_removeAncestor, 2);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_REFERENCE, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_typeHelper.cmd_type_Reference, 1);
+		TRY_CALL(_typeHelper.cmd_type_reference, 1);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_ADD_DECLARATION, [](int argc, char* argv[]) -> bool
 	{
-		TRY_CALL(_typeHelper.cmd_type_AddDeclaration, 2);
+		TRY_CALL(_typeHelper.cmd_type_addDeclaration, 2);
 	}, false);
 
 	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_REMOVE_DECLARATION, [](int argc, char* argv[]) -> bool
 	{
 		TRY_CALL(_typeHelper.cmd_type_removeDeclaration, 2);
 	}, false);
+
+	_plugin_registercommand_ex(pluginHandle, CMD_TYPE_OFFSET, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_typeHelper.cmd_type_offset, 2);
+	}, false);
+
+	//array commands
+	_plugin_registercommand_ex(pluginHandle, CMD_ARRAY_SET, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_arrayHelper.cmd_array_set, 1);
+	}, false);
+
+	_plugin_registercommand_ex(pluginHandle, CMD_ARRAY_GET, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_arrayHelper.cmd_array_get, 1);
+	}, false);
+
+	_plugin_registercommand_ex(pluginHandle, CMD_ARRAY_REMOVE, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_arrayHelper.cmd_array_remove, 1);
+	}, false);
+
+	_plugin_registercommand_ex(pluginHandle, CMD_ARRAY_REMOVEALL, [](int argc, char* argv[]) -> bool
+	{
+		TRY_CALL(_arrayHelper.cmd_array_removeAll, 0);
+	}, false);
+
 
     return true; //Return false to cancel loading the plugin.
 }

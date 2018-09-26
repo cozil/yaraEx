@@ -357,6 +357,15 @@ void yaraEx::execScript()
 			continue;
 
 		std::vector<std::string> script;
+		for (auto& matchPair : rule.matches)
+		{
+			///Storing all offsets to an array using matchPair.first as the name of array
+			script.push_back(string_formatA("Array.remove %s", matchPair.first.c_str()));
+			for (size_t i = 0; i < matchPair.second.size();++i)
+				script.push_back(string_formatA("Array.set %s,.%d,0x%x", 
+				matchPair.first.c_str(), i, m_base + matchPair.second[i].offset));
+		}
+
 		for (auto& cmd : rule.cmds)
 		{
 			std::string cmdtext = cmd.fulltext;
@@ -444,7 +453,7 @@ void yaraEx::execScript()
 		}
 	}
 
-	DbgScriptUnload();
+	//DbgScriptUnload();
 }
 
 void yaraEx::compilerCallback(int error_level, const char* file_name, int line_number, const char* message, void* user_data)
