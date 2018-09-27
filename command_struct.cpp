@@ -345,7 +345,7 @@ bool CTypeHelper::cmd_type_reference(int argc, char* argv[])
 bool CTypeHelper::cmd_type_addDeclaration(int argc, char* argv[])
 {
 	std::string typeName = trim_stringA(argv[1]);
-	std::string declare = trim_stringA(argv[2]);
+	std::string declare = eval_format(argv[2]);
 
 	auto itrStruct = m_structs.find(typeName);
 	if (itrStruct != m_structs.end())

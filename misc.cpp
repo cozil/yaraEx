@@ -173,7 +173,8 @@ static const std::vector<CmdHelp> _cmd_helps =
 		"Usage: %s <arg1>, <arg2>\n"
 		"  <arg1>: Name of struct.\n"
 		"  <arg2>: Declaration text.\n"
-		"  They will be outputed as it is while using command Type.print.\n"
+		"  Declaration text support string formatting. You can use '{...}' to format a value.\n"
+		"  They will be outputed as it is when using command Type.print.\n"
 		"  You can put function declarations here.\n"
 	},
 
