@@ -763,6 +763,7 @@ void CTypeHelper::structPrint(const _Struct& struc, int offsetLen, int typeLen, 
 	result += string_formatA("struct %s", struc.name.c_str());
 
 	//ancestors
+	str.clear();
 	std::for_each(struc.ancestors.cbegin(), struc.ancestors.cend(), [&str](const _Ancestor& ancestor)
 	{
 		if (str.size() != 0) str += ",";
