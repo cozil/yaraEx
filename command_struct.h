@@ -55,6 +55,7 @@ public:
 			array_size = _size;
 			ispadding = true;
 			name = string_formatA("__pad_%04x", offset);
+			comment.clear();
 		}
 
 		_Member& operator=(const _Member& member)
@@ -65,6 +66,7 @@ public:
 			array_size = member.array_size;
 			offset = member.offset;
 			ispadding = member.ispadding;
+			comment = member.comment;
 			return *this;
 		}
 
@@ -76,6 +78,7 @@ public:
 			array_size = member.array_size;
 			offset = member.offset;
 			ispadding = member.ispadding;
+			comment = member.comment;
 			return *this;
 		}
 	};

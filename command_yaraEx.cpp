@@ -537,7 +537,7 @@ int yaraEx::scanCallback(int message, void* message_data, void* user_data)
 
 	case CALLBACK_MSG_RULE_NOT_MATCHING:
 	{
-		logprintf(LL::Warning, "Rule \"%s\" didn't match!", yrRule->identifier);
+		logprintf(LL::Error, "Rule \"%s\" didn't match!", yrRule->identifier);
 	}
 	break;
 

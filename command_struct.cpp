@@ -199,6 +199,10 @@ bool CTypeHelper::cmd_type_setMemberComment(int argc, char* argv[])
 		}
 
 		itrMember->comment = comment;
+		logprintf(LL::Debug, "Set %s::%s comment: \"%s\"",
+			itrStruct->first.c_str(),
+			itrMember->name.c_str(),
+			itrMember->comment.c_str());
 		return true;
 	}
 
@@ -217,6 +221,10 @@ bool CTypeHelper::cmd_type_setMemberComment(int argc, char* argv[])
 		}
 
 		itrMember->comment = comment;
+		logprintf(LL::Debug, "Set %s::%s comment: \"%s\"",
+			itrUnion->first.c_str(),
+			itrMember->name.c_str(),
+			itrMember->comment.c_str());
 		return true;
 	}
 
@@ -743,7 +751,7 @@ bool CTypeHelper::structRemoveMember(_Struct& struc, const std::string& memberNa
 void CTypeHelper::structPrint(const _Struct& struc, int offsetLen, int typeLen, int memberLen)
 {
 	std::string result, str;
-	result.reserve(1024);
+	result.reserve(10240);
 
 	//struct comment text
 	if (struc.comment.size())
@@ -861,7 +869,7 @@ void CTypeHelper::structPrint(const _Struct& struc, int offsetLen, int typeLen, 
 void CTypeHelper::unionPrint(const _Union& un, int offsetLen, int typeLen, int memberLen)
 {
 	std::string result, str;
-	result.reserve(1024);
+	result.reserve(10240);
 
 	//union comment text
 	if (un.comment.size())
