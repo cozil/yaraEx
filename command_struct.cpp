@@ -774,23 +774,23 @@ void CTypeHelper::structPrint(const _Struct& struc, int offsetLen, int typeLen, 
 	str.clear();
 	std::for_each(struc.ancestors.cbegin(), struc.ancestors.cend(), [&str](const _Ancestor& ancestor)
 	{
-		if (str.size() != 0) str += ",";
+		if (str.size() != 0) str += ", ";
 		switch (ancestor.access_type)
 		{
 		case _Ancestor::ACCESS_PRIVATE:
-			str += string_formatA(" private %s", ancestor.struct_name.c_str());
+			str += string_formatA("private %s", ancestor.struct_name.c_str());
 			break;
 		case _Ancestor::ACCESS_PROTECTED:
-			str += string_formatA(" protected %s", ancestor.struct_name.c_str());
+			str += string_formatA("protected %s", ancestor.struct_name.c_str());
 			break;
 		case _Ancestor::ACCESS_PUBLIC:
-			str += string_formatA(" public %s", ancestor.struct_name.c_str());
+			str += string_formatA("public %s", ancestor.struct_name.c_str());
 			break;
 		}
 	});
 
 	if (str.size() != 0)
-		result += ":" + str;
+		result += " : " + str;
 	result += "\n{\n";
 
 	//declarations
@@ -804,7 +804,7 @@ void CTypeHelper::structPrint(const _Struct& struc, int offsetLen, int typeLen, 
 	//members
 	for (const auto& member : struc.members)
 	{
-		bool set_comment = (member.comment.size() != 0);
+		bool set_comment = (!member.ispadding && member.comment.size() != 0);
 
 		//If comment text has multiple lines, putting it before member text
 		if (set_comment && member.comment.find("\\n") != std::string::npos)
@@ -827,7 +827,7 @@ void CTypeHelper::structPrint(const _Struct& struc, int offsetLen, int typeLen, 
 		{
 			str = string_formatA(string_formatA("/*%%0%dx*/", offsetLen).c_str(),
 				member.offset);
-			str_fill(str, offsetLen + 4 + 4, ' ');
+			str_fill(str, offsetLen + 4 + 4, ' '); // 4 chars for '/**/', 4 chars for '    '
 			result += str;
 		}
 		else
@@ -836,8 +836,11 @@ void CTypeHelper::structPrint(const _Struct& struc, int offsetLen, int typeLen, 
 		}
 
 		//Formatting type name text
+		int n = typeLen + (member.ispadding ? memberLen : 0);
+		
 		str = member.type;
-		str_fill(str, typeLen < (int)str.size() ? (int)str.size()+1 : typeLen, ' ');
+		if (n <= (int)str.size()) n = (int)str.size() + 1;
+		str_fill(str, n, ' ');
 		result += str;
 
 		//Formatting member name text
@@ -848,9 +851,9 @@ void CTypeHelper::structPrint(const _Struct& struc, int offsetLen, int typeLen, 
 
 		if (set_comment)
 		{
-			str_fill(str, memberLen, ' ');
+			str_fill(str, memberLen + typeLen - n, ' ');
 			result += str;
-			result += " // ";
+			result += "// ";
 			result += member.comment;
 		}
 		else
@@ -905,7 +908,7 @@ void CTypeHelper::unionPrint(const _Union& un, int offsetLen, int typeLen, int m
 
 		//Formatting type name text
 		str = member.type;
-		str_fill(str, typeLen, ' ');
+		str_fill(str, typeLen <= (int)str.size() ? (int)str.size() + 1 : typeLen, ' ');
 		result += str;
 
 		//Formatting member name text
@@ -918,7 +921,7 @@ void CTypeHelper::unionPrint(const _Union& un, int offsetLen, int typeLen, int m
 		{
 			str_fill(str, memberLen, ' ');
 			result += str;
-			result += " // ";
+			result += "// ";
 			result += member.comment;
 		}
 		else
